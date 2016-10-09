@@ -1,0 +1,53 @@
+/*
+ * Copyright 2016 Luca Zanconato
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef SALTPACK_BASE_H
+#define SALTPACK_BASE_H
+
+#include "types.h"
+
+namespace saltpack {
+
+    class Base {
+
+    public:
+        const BYTE_ARRAY SENDER_KEY_NONCE = {'s', 'a', 'l', 't', 'p', 'a', 'c', 'k', '_', 's', 'e', 'n', 'd', 'e', 'r',
+                                             '_', 'k', 'e', 'y', '_', 's', 'b', 'o', 'x'};
+        const BYTE_ARRAY PAYLOAD_KEY_BOX_NONCE = {'s', 'a', 'l', 't', 'p', 'a', 'c', 'k', '_', 'p', 'a', 'y', 'l', 'o',
+                                                  'a', 'd', '_', 'k', 'e', 'y', '_', 'b', 'o', 'x'};
+        const BYTE_ARRAY ZEROES = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                   0, 0, 0, 0};
+        const BYTE_ARRAY SIGNATURE_ATTACHED_SIGNATURE = {'s', 'a', 'l', 't', 'p', 'a', 'c', 'k', ' ', 'a', 't', 't',
+                                                         'a', 'c', 'h', 'e', 'd', ' ', 's', 'i', 'g', 'n', 'a', 't',
+                                                         'u', 'r', 'e', 0};
+        const BYTE_ARRAY SIGNATURE_DETACHED_SIGNATURE = {'s', 'a', 'l', 't', 'p', 'a', 'c', 'k', ' ', 'd', 'e', 't',
+                                                         'a', 'c', 'h', 'e', 'd', ' ', 's', 'i', 'g', 'n', 'a', 't',
+                                                         'u', 'r', 'e', 0};
+
+        virtual ~Base();
+
+    protected:
+        int mode = -1;
+
+        BYTE_ARRAY generatePayloadSecretboxNonce(int packetIndex);
+
+        BYTE_ARRAY generateMacKey(BYTE_ARRAY headerHashTrunc, BYTE_ARRAY publickey, BYTE_ARRAY secretkey);
+
+        BYTE_ARRAY generateValueForSignature(int packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message);
+    };
+}
+
+#endif //SALTPACK_BASE_H
