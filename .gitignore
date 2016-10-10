@@ -1,2 +1,11 @@
 .DS_Store
 .idea
+CMakeCache.txt
+CMakeFiles
+*.cmake
+Makefile
+Testing
+*.a
+saltpack-test
+ext/gtest/*
+

@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
 project(saltpack)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC -Wall -DSALTPACK_COMPILE")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC -Wall -Wno-deprecated")
+if(MSVC)
+    #vc 2012 fix for vararg templates
+    set(MSVC_COMPILER_DEFS "-D_VARIADIC_MAX=10")
+endif() 
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
 
@@ -20,10 +24,28 @@ install(FILES include/saltpack.h DESTINATION include)
 install(DIRECTORY include/saltpack DESTINATION include)
 
 # Tests
+add_subdirectory(ext/gtest)
+add_definitions(${MSVC_COMPILER_DEFS})
 enable_testing()
+include_directories(${GTEST_INCLUDE_DIRS})
 add_executable(saltpack-test test/encryption.cpp test/signature.cpp test/main.cpp)
+add_dependencies(saltpack-test googletest)
+
+if(NOT WIN32 OR MINGW)
+    target_link_libraries(saltpack-test ${GTEST_LIBS_DIR}/libgtest.a ${GTEST_LIBS_DIR}/libgtest_main.a)
+else()
+    target_link_libraries(saltpack-test
+        debug ${GTEST_LIBS_DIR}/DebugLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest${CMAKE_FIND_LIBRARY_SUFFIXES}
+        optimized ${GTEST_LIBS_DIR}/ReleaseLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest${CMAKE_FIND_LIBRARY_SUFFIXES}
+        )
+    target_link_libraries(saltpack-test
+        debug ${GTEST_LIBS_DIR}/DebugLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest_main${CMAKE_FIND_LIBRARY_SUFFIXES}
+        optimized ${GTEST_LIBS_DIR}/ReleaseLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest_main${CMAKE_FIND_LIBRARY_SUFFIXES}
+        )
+endif()
+
 target_link_libraries(saltpack-test saltpack)
-add_test(NAME saltpack-test COMMAND saltpack-test)
+add_test(saltpack-test saltpack-test)
 
 # LibSodium
 find_package(Libsodium REQUIRED)
@@ -42,11 +64,6 @@ find_package(GMP REQUIRED)
 include_directories(${GMP_INCLUDE_DIRS})
 target_link_libraries(saltpack ${GMP_LIBRARIES})
 target_link_libraries(saltpack-test ${GMP_LIBRARIES})
-
-# GTest
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
-target_link_libraries(saltpack-test ${GTEST_LIBRARIES})
 
 # Threads
 find_package(Threads REQUIRED)
