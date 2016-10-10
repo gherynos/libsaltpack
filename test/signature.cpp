@@ -94,7 +94,7 @@ TEST(signature, attached_armor) {
 
     // sign message
     std::stringstream out;
-    saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_DETACHED_SIGNATURE);
+    saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_ATTACHED_SIGNATURE);
     saltpack::MessageWriter *sig = new saltpack::MessageWriter(aOut, signer_secretkey, false);
     sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' '});
     sig->addBlock({'m', 'e', 's', 's', 'a', 'g', 'e'});
