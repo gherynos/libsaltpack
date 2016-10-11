@@ -208,6 +208,10 @@ namespace saltpack {
 
     void MessageWriter::addBlock(BYTE_ARRAY data) {
 
+        // check block size
+        if (data.size() > 1024 * 1024)
+            throw SaltpackException("Blocks must be at most 1MB.");
+
         switch (mode) {
 
             case MODE_ENCRYPTION: {
