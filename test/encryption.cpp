@@ -56,6 +56,10 @@ TEST(encryption, main) {
         saltpack::BYTE_ARRAY message = dec->getBlock();
         msg.write(reinterpret_cast<const char *>(message.data()), message.size());
     }
+
+    for (saltpack::BYTE_ARRAY rec: dec->getRecipients())
+        ASSERT_EQ(rec.size(), 0);
+
     delete dec;
 
     ASSERT_EQ(msg.str(), "A m3sS@g{");
@@ -175,7 +179,7 @@ TEST(encryption, armor) {
     // encrypt message
     std::stringstream out;
     saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_ENCRYPTION);
-    saltpack::MessageWriter *enc = new saltpack::MessageWriter(aOut, sender_secretkey, recipients, false);
+    saltpack::MessageWriter *enc = new saltpack::MessageWriter(aOut, sender_secretkey, recipients, true);
     enc->addBlock({'A', 'n', 'o', 't', 'h', 'e', 'r', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'});
     enc->finalise();
     aOut.finalise();
@@ -188,6 +192,7 @@ TEST(encryption, armor) {
     saltpack::ArmoredInputStream is(in);
     std::stringstream msg;
     saltpack::MessageReader *dec = new saltpack::MessageReader(is, recipient_secretkey);
+    ASSERT_EQ(recipients, dec->getRecipients());
     while (dec->hasMoreBlocks()) {
 
         saltpack::BYTE_ARRAY message = dec->getBlock();

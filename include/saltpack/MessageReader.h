@@ -39,11 +39,14 @@ namespace saltpack {
 
         bool hasMoreBlocks();
 
+        std::list<BYTE_ARRAY> getRecipients();
+
     private:
         BYTE_ARRAY headerHash;
         BYTE_ARRAY payloadKey;
         BYTE_ARRAY macKey;
         int recipientIndex;
+        std::list<BYTE_ARRAY> recipients;
         unsigned int packetIndex;
         std::istream &input;
         msgpack::unpacker unpacker;

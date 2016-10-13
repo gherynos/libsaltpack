@@ -162,6 +162,8 @@ namespace saltpack {
         sodium_memzero(payloadKey.data(), payloadKey.size());
         sodium_memzero(macKey.data(), macKey.size());
         sodium_memzero(publicKey.data(), publicKey.size());
+        for (BYTE_ARRAY recipient: recipients)
+            sodium_memzero(recipient.data(), recipient.size());
     }
 
     void MessageReader::processEncryptionHeader(std::vector<char> headerBin, BYTE_ARRAY recipientSecretkey) {
@@ -201,14 +203,17 @@ namespace saltpack {
         // try to open the key boxes
         recipientIndex = -1;
         payloadKey = BYTE_ARRAY(32);
-        for (unsigned long i = 0; i < header.recipientsList.size(); i++)
+        for (unsigned long i = 0; i < header.recipientsList.size(); i++) {
+
             if (crypto_box_open_easy_afternm(payloadKey.data(), header.recipientsList[i].payloadKeyBox.data(),
                                              header.recipientsList[i].payloadKeyBox.size(),
                                              PAYLOAD_KEY_BOX_NONCE.data(), k.data()) == 0) {
 
                 recipientIndex = (int) i;
-                break;
             }
+
+            recipients.push_back(header.recipientsList[i].recipientPublicKey);
+        }
 
         if (recipientIndex != -1) {
 
@@ -376,5 +381,10 @@ namespace saltpack {
             throw SaltpackException("Wrong mode.");
 
         return !lastBlockFound;
+    }
+
+    std::list<BYTE_ARRAY> MessageReader::getRecipients() {
+
+        return recipients;
     }
 }
