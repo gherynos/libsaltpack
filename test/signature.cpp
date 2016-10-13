@@ -43,7 +43,7 @@ TEST(signature, attached) {
         saltpack::BYTE_ARRAY message = dec->getBlock();
         msg.write(reinterpret_cast<const char *>(message.data()), message.size());
     }
-
+    ASSERT_EQ(signer_publickey, dec->getSender());
     delete dec;
 
     ASSERT_EQ(msg.str(), "a signed message");
@@ -114,7 +114,7 @@ TEST(signature, attached_armor) {
         saltpack::BYTE_ARRAY message = dec->getBlock();
         msg.write(reinterpret_cast<const char *>(message.data()), message.size());
     }
-
+    ASSERT_EQ(signer_publickey, dec->getSender());
     delete dec;
 
     ASSERT_EQ(msg.str(), "a signed message");
@@ -140,6 +140,7 @@ TEST(signature, detached) {
     std::stringstream in(out.str());
     std::stringstream msg("Th3 mE$s4g[");
     saltpack::MessageReader *dec = new saltpack::MessageReader(in, msg);
+    ASSERT_EQ(signer_publickey, dec->getSender());
     delete dec;
 
     try {
@@ -178,6 +179,7 @@ TEST(signature, detached_armor) {
     std::stringstream msg("Th3 mE$s4g!");
     saltpack::ArmoredInputStream is(in);
     saltpack::MessageReader *dec = new saltpack::MessageReader(is, msg);
+    ASSERT_EQ(signer_publickey, dec->getSender());
     delete dec;
 
     try {
