@@ -41,6 +41,8 @@ namespace saltpack {
 
         std::list<BYTE_ARRAY> getRecipients();
 
+        BYTE_ARRAY getSender();
+
     private:
         BYTE_ARRAY headerHash;
         BYTE_ARRAY payloadKey;
@@ -52,7 +54,7 @@ namespace saltpack {
         msgpack::unpacker unpacker;
         bool lastBlockFound;
 
-        BYTE_ARRAY publicKey;
+        BYTE_ARRAY senderPublickey;
 
         void processEncryptionHeader(std::vector<char> headerBin, BYTE_ARRAY recipientSecretkey);
 

@@ -152,7 +152,7 @@ namespace saltpack {
         concat.insert(concat.end(), hash.begin(), hash.end());
 
         // verify signature
-        if (crypto_sign_verify_detached(signature.data(), concat.data(), concat.size(), publicKey.data()) != 0)
+        if (crypto_sign_verify_detached(signature.data(), concat.data(), concat.size(), senderPublickey.data()) != 0)
             throw SaltpackException("Signature was forged or corrupt.");
     }
 
@@ -161,7 +161,7 @@ namespace saltpack {
         sodium_memzero(headerHash.data(), headerHash.size());
         sodium_memzero(payloadKey.data(), payloadKey.size());
         sodium_memzero(macKey.data(), macKey.size());
-        sodium_memzero(publicKey.data(), publicKey.size());
+        sodium_memzero(senderPublickey.data(), senderPublickey.size());
         for (BYTE_ARRAY recipient: recipients)
             sodium_memzero(recipient.data(), recipient.size());
     }
@@ -218,7 +218,7 @@ namespace saltpack {
         if (recipientIndex != -1) {
 
             // open the sender secretbox
-            BYTE_ARRAY senderPublickey(crypto_box_PUBLICKEYBYTES);
+            senderPublickey = BYTE_ARRAY(crypto_box_PUBLICKEYBYTES);
             if (crypto_secretbox_open_easy(senderPublickey.data(), header.senderSecretbox.data(),
                                            header.senderSecretbox.size(), SENDER_KEY_NONCE.data(), payloadKey.data()) !=
                 0)
@@ -261,7 +261,7 @@ namespace saltpack {
         if (header.mode != mode)
             throw SaltpackException("Wrong mode.");
 
-        publicKey = header.senderPublicKey;
+        senderPublickey = header.senderPublicKey;
     }
 
     BYTE_ARRAY MessageReader::getBlock() {
@@ -364,7 +364,8 @@ namespace saltpack {
         BYTE_ARRAY value = generateValueForSignature(packetIndex, headerHash, packet.payloadChunk);
 
         // verify signature
-        if (crypto_sign_verify_detached(packet.signature.data(), value.data(), value.size(), publicKey.data()) != 0)
+        if (crypto_sign_verify_detached(packet.signature.data(), value.data(), value.size(), senderPublickey.data()) !=
+            0)
             throw SaltpackException("Signature was forged or corrupt.");
 
         if (packet.payloadChunk.size() > 0)
@@ -386,5 +387,10 @@ namespace saltpack {
     std::list<BYTE_ARRAY> MessageReader::getRecipients() {
 
         return recipients;
+    }
+
+    BYTE_ARRAY MessageReader::getSender() {
+
+        return senderPublickey;
     }
 }

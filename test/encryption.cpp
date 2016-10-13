@@ -58,7 +58,9 @@ TEST(encryption, main) {
     }
 
     for (saltpack::BYTE_ARRAY rec: dec->getRecipients())
-        ASSERT_EQ(rec.size(), 0);
+        ASSERT_EQ(rec.size(), (unsigned long) 0);
+
+    ASSERT_EQ(sender_publickey, dec->getSender());
 
     delete dec;
 
@@ -193,6 +195,7 @@ TEST(encryption, armor) {
     std::stringstream msg;
     saltpack::MessageReader *dec = new saltpack::MessageReader(is, recipient_secretkey);
     ASSERT_EQ(recipients, dec->getRecipients());
+    ASSERT_EQ(sender_publickey, dec->getSender());
     while (dec->hasMoreBlocks()) {
 
         saltpack::BYTE_ARRAY message = dec->getBlock();
