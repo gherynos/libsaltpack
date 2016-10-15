@@ -28,7 +28,7 @@ add_subdirectory(ext/gtest)
 add_definitions(${MSVC_COMPILER_DEFS})
 enable_testing()
 include_directories(${GTEST_INCLUDE_DIRS})
-add_executable(saltpack-test test/encryption.cpp test/signature.cpp test/utils.cpp test/main.cpp)
+add_executable(saltpack-test test/armor.cpp test/encryption.cpp test/signature.cpp test/utils.cpp test/main.cpp)
 add_dependencies(saltpack-test googletest)
 
 if(NOT WIN32 OR MINGW)
