@@ -28,6 +28,8 @@ namespace saltpack {
         MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipients,
                       bool visibleRecipients);
 
+        MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipients, bool visibleRecipients);
+
         MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, bool detatchedSignature);
 
         virtual ~MessageWriter();
@@ -46,9 +48,10 @@ namespace saltpack {
         BYTE_ARRAY secretKey;
         BYTE_ARRAY buffer;
 
-        std::string generateEncryptionHeader(BYTE_ARRAY payloadKey, BYTE_ARRAY senderPublickey,
-                                                                std::list<BYTE_ARRAY> recipientsPublickeys,
-                                                                bool visibleRecipients);
+        std::string
+        generateEncryptionHeader(BYTE_ARRAY payloadKey, BYTE_ARRAY ephemeralSecretkey, BYTE_ARRAY ephemeralPublickey,
+                                 BYTE_ARRAY senderPublickey, std::list<BYTE_ARRAY> recipientsPublickeys,
+                                 bool visibleRecipients);
 
         std::string generateSignatureHeader(BYTE_ARRAY senderPublickey, bool detatchedSignature);
 

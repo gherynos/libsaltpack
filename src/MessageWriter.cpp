@@ -43,9 +43,25 @@ namespace saltpack {
         payloadKey = BYTE_ARRAY(32);
         randombytes_buf(payloadKey.data(), payloadKey.size());
 
+        // generate random ephemeral keypair
+        BYTE_ARRAY ephemeralPublicKey(crypto_box_PUBLICKEYBYTES);
+        BYTE_ARRAY ephemeralSecretkey(crypto_box_SECRETKEYBYTES);
+        if (crypto_box_keypair(ephemeralPublicKey.data(), ephemeralSecretkey.data()) != 0)
+            throw SaltpackException("Errors while generating keypair.");
+
+        // intentionally anonymous message?
+        BYTE_ARRAY senderPublickey;
+        if (senderSecretkey.size() == 0) {
+
+            senderSecretkey = ephemeralSecretkey;
+            senderPublickey = ephemeralPublicKey;
+
+        } else
+            senderPublickey = Utils::derivePublickey(senderSecretkey);
+
         // generate header
-        BYTE_ARRAY senderPublickey = Utils::derivePublickey(senderSecretkey);
-        std::string header = generateEncryptionHeader(payloadKey, senderPublickey, recipients, visibleRecipients);
+        std::string header = generateEncryptionHeader(payloadKey, ephemeralSecretkey, ephemeralPublicKey,
+                                                      senderPublickey, recipients, visibleRecipients);
 
         // encode header
         std::string header_enc = encodeHeader(header);
@@ -61,6 +77,9 @@ namespace saltpack {
         for (auto const &publickey : recipients)
             macKeys.push_back(generateMacKey(headerHashTrunc, publickey, senderSecretkey));
     }
+
+    MessageWriter::MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipients, bool visibleRecipients)
+            : MessageWriter(os, BYTE_ARRAY(0), recipients, visibleRecipients) {}
 
     MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, bool detatchedSignature) : output(os) {
 
@@ -106,7 +125,8 @@ namespace saltpack {
         buffer.clear();
     }
 
-    std::string MessageWriter::generateEncryptionHeader(BYTE_ARRAY payloadKey, BYTE_ARRAY senderPublickey,
+    std::string MessageWriter::generateEncryptionHeader(BYTE_ARRAY payloadKey, BYTE_ARRAY ephemeralSecretkey,
+                                                        BYTE_ARRAY ephemeralPublickey, BYTE_ARRAY senderPublickey,
                                                         std::list<BYTE_ARRAY> recipientsPublickeys,
                                                         bool visibleRecipients) {
 
@@ -115,12 +135,7 @@ namespace saltpack {
         headerPacket.format = "saltpack";
         headerPacket.version = std::vector<int> {1, 0};
         headerPacket.mode = 0;
-
-        // generate random ephemeral keypair
-        headerPacket.ephemeralPublicKey = BYTE_ARRAY(crypto_box_PUBLICKEYBYTES);
-        BYTE_ARRAY ephemeralSecretkey(crypto_box_SECRETKEYBYTES);
-        if (crypto_box_keypair(headerPacket.ephemeralPublicKey.data(), ephemeralSecretkey.data()) != 0)
-            throw SaltpackException("Errors while generating keypair.");
+        headerPacket.ephemeralPublicKey = ephemeralPublickey;
 
         // generate sender secretbox
         headerPacket.senderSecretbox = BYTE_ARRAY(crypto_secretbox_MACBYTES + senderPublickey.size());

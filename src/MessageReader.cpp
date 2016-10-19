@@ -224,6 +224,9 @@ namespace saltpack {
                 0)
                 throw SaltpackException("Errors while getting sender public key.");
 
+            // intentionally anonymous message?
+            intentionallyAnonymous = header.ephemeralPublicKey == senderPublickey;
+
             // generate mac key
             BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[24]);
             macKey = generateMacKey(headerHashTrunc, senderPublickey, recipientSecretkey);
@@ -392,5 +395,13 @@ namespace saltpack {
     BYTE_ARRAY MessageReader::getSender() {
 
         return senderPublickey;
+    }
+
+    bool MessageReader::isIntentionallyAnonymous() {
+
+        if (mode != MODE_ENCRYPTION)
+            throw SaltpackException("Wrong mode.");
+
+        return intentionallyAnonymous;
     }
 }

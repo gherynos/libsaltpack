@@ -61,6 +61,7 @@ TEST(encryption, main) {
         ASSERT_EQ(rec.size(), (unsigned long) 0);
 
     ASSERT_EQ(sender_publickey, dec->getSender());
+    ASSERT_FALSE(dec->isIntentionallyAnonymous());
 
     delete dec;
 
@@ -196,6 +197,7 @@ TEST(encryption, armor) {
     saltpack::MessageReader *dec = new saltpack::MessageReader(is, recipient_secretkey);
     ASSERT_EQ(recipients, dec->getRecipients());
     ASSERT_EQ(sender_publickey, dec->getSender());
+    ASSERT_FALSE(dec->isIntentionallyAnonymous());
     while (dec->hasMoreBlocks()) {
 
         saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -204,4 +206,88 @@ TEST(encryption, armor) {
     delete dec;
 
     ASSERT_EQ(msg.str(), "Another message");
+}
+
+    TEST(encryption, intentionally_anonymous) {
+
+    saltpack::BYTE_ARRAY recipient_secretkey(crypto_box_SECRETKEYBYTES);
+    for (unsigned long i = 0; i < recipient_secretkey.size(); i++)
+        recipient_secretkey[i] = (char) 0;
+    saltpack::BYTE_ARRAY recipient_publickey = saltpack::Utils::derivePublickey(recipient_secretkey);
+
+    // recipients
+    std::list<saltpack::BYTE_ARRAY> recipients;
+    recipients.push_back(recipient_publickey);
+
+    // encrypt message
+    std::stringstream out;
+
+    saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, recipients, false);
+    enc->addBlock({'A', ' '});
+    enc->addBlock({'m', '3', 's', 'S'});
+    enc->addBlock({'@', 'g', '!'});
+    enc->finalise();
+
+    out.flush();
+    delete enc;
+
+    // decrypt message
+    std::stringstream in(out.str());
+    std::stringstream msg;
+    saltpack::MessageReader *dec = new saltpack::MessageReader(in, recipient_secretkey);
+    while (dec->hasMoreBlocks()) {
+
+        saltpack::BYTE_ARRAY message = dec->getBlock();
+        msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+    }
+
+    for (saltpack::BYTE_ARRAY rec: dec->getRecipients())
+        ASSERT_EQ(rec.size(), (unsigned long) 0);
+
+    ASSERT_TRUE(dec->isIntentionallyAnonymous());
+
+    delete dec;
+
+    ASSERT_EQ(msg.str(), "A m3sS@g!");
+}
+
+TEST(encryption, intentionally_anonymous_rec) {
+
+    saltpack::BYTE_ARRAY recipient_secretkey(crypto_box_SECRETKEYBYTES);
+    for (unsigned long i = 0; i < recipient_secretkey.size(); i++)
+        recipient_secretkey[i] = (char) 0;
+    saltpack::BYTE_ARRAY recipient_publickey = saltpack::Utils::derivePublickey(recipient_secretkey);
+
+    // recipients
+    std::list<saltpack::BYTE_ARRAY> recipients;
+    recipients.push_back(recipient_publickey);
+
+    // encrypt message
+    std::stringstream out;
+
+    saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, recipients, true);
+    enc->addBlock({'A', ' '});
+    enc->addBlock({'m', '3', 's', 'S'});
+    enc->addBlock({'@', 'g', '!'});
+    enc->addBlock({'?'});
+    enc->finalise();
+
+    out.flush();
+    delete enc;
+
+    // decrypt message
+    std::stringstream in(out.str());
+    std::stringstream msg;
+    saltpack::MessageReader *dec = new saltpack::MessageReader(in, recipient_secretkey);
+    while (dec->hasMoreBlocks()) {
+
+        saltpack::BYTE_ARRAY message = dec->getBlock();
+        msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+    }
+
+    ASSERT_TRUE(dec->isIntentionallyAnonymous());
+
+    delete dec;
+
+    ASSERT_EQ(msg.str(), "A m3sS@g!?");
 }

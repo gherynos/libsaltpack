@@ -43,6 +43,8 @@ namespace saltpack {
 
         BYTE_ARRAY getSender();
 
+        bool isIntentionallyAnonymous();
+
     private:
         BYTE_ARRAY headerHash;
         BYTE_ARRAY payloadKey;
@@ -53,6 +55,7 @@ namespace saltpack {
         std::istream &input;
         msgpack::unpacker unpacker;
         bool lastBlockFound;
+        bool intentionallyAnonymous;
 
         BYTE_ARRAY senderPublickey;
 
