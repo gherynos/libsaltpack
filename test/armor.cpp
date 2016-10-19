@@ -121,7 +121,7 @@ TEST(armor, enc_rnd) {
     randombytes_buf(data.data(), data.size());
 
     std::stringstream step;
-    saltpack::ArmoredOutputStream *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_ENCRYPTION,
+    saltpack::ArmoredOutputStream *aOut = new saltpack::ArmoredOutputStream(step, "MYAPP", saltpack::MODE_ENCRYPTION,
                                                                             rand() % 10 + 1, rand() % 100 + 1);
     aOut->write((const char *) data.data(), data.size());
     aOut->finalise();
@@ -129,7 +129,7 @@ TEST(armor, enc_rnd) {
     delete aOut;
 
     std::stringstream input(step.str());
-    saltpack::ArmoredInputStream *aIn = new saltpack::ArmoredInputStream(input);
+    saltpack::ArmoredInputStream *aIn = new saltpack::ArmoredInputStream(input, "MYAPP");
 
     char buffer[12];
     std::stringstream coll;
@@ -212,4 +212,56 @@ TEST(armor, det_rnd) {
         cmp[i] = (saltpack::BYTE) s[i];
 
     ASSERT_EQ(data, cmp);
+}
+
+TEST(armor, wrong_app) {
+
+    saltpack::BYTE_ARRAY data((unsigned long) (rand() % 1000 + 1));
+    randombytes_buf(data.data(), data.size());
+
+    std::stringstream step;
+    saltpack::ArmoredOutputStream *aOut = new saltpack::ArmoredOutputStream(step, "App1",
+                                                                            saltpack::MODE_DETACHED_SIGNATURE,
+                                                                            rand() % 10 + 1, rand() % 100 + 1);
+    aOut->write((const char *) data.data(), data.size());
+    aOut->finalise();
+
+    delete aOut;
+
+    try {
+
+        std::stringstream input(step.str());
+        saltpack::ArmoredInputStream aIn(input, "App2");
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong application.");
+    }
+}
+
+TEST(armor, wrong_app_name) {
+
+    try {
+
+        std::stringstream step;
+        saltpack::ArmoredOutputStream aOut(step, "a name", saltpack::MODE_DETACHED_SIGNATURE);
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong application name.");
+    }
+
+    try {
+
+        std::stringstream input;
+        saltpack::ArmoredInputStream aIn(input, "an.app");
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong application name.");
+    }
 }

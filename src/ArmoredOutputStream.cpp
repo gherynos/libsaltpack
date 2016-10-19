@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <regex>
 #include "saltpack/ArmoredOutputStream.h"
 #include "saltpack/Utils.h"
 #include "saltpack/modes.h"
@@ -22,8 +23,19 @@
 
 namespace saltpack {
 
-    ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, int mode, int lettersInWords, int wordsInPhrase)
-            : std::ostream(this), output(out) {
+    const std::regex APP_REGEXP("[a-zA-Z0-9]+");
+
+    ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, std::string app, int mode, int lettersInWords,
+                                             int wordsInPhrase) : std::ostream(this), output(out) {
+
+        if (app != "") {
+
+            std::smatch baseMatch;
+            if (!std::regex_match(app, baseMatch, APP_REGEXP))
+                throw SaltpackException("Wrong application name.");
+
+            this->app = app;
+        }
 
         this->mode = mode;
         this->lettersInWord = (size_t) lettersInWords;
@@ -34,7 +46,10 @@ namespace saltpack {
         wCount = 0;
 
         // write header
-        output << "BEGIN SALTPACK ";
+        output << "BEGIN ";
+        if (app != "")
+            output << app << " ";
+        output << "SALTPACK ";
         switch (mode) {
 
             case MODE_ENCRYPTION: {
@@ -61,7 +76,17 @@ namespace saltpack {
         output << ". ";
     }
 
-    ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, int mode) : ArmoredOutputStream(out, mode, 15, 200) {}
+    ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, std::string app, int mode) : ArmoredOutputStream(out,
+                                                                                                                 app,
+                                                                                                                 mode,
+                                                                                                                 15,
+                                                                                                                 200) {}
+
+    ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, int mode) : ArmoredOutputStream(out, "", mode, 15,
+                                                                                                200) {}
+
+    ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, int mode, int lettersInWords, int wordsInPhrase)
+            : ArmoredOutputStream(out, "", mode, lettersInWords, wordsInPhrase) {}
 
     ArmoredOutputStream::~ArmoredOutputStream() {
 
@@ -77,7 +102,10 @@ namespace saltpack {
         }
 
         // write footer
-        output << ". END SALTPACK ";
+        output << ". END ";
+        if (app != "")
+            output << app << " ";
+        output << "SALTPACK ";
         switch (mode) {
 
             case MODE_ENCRYPTION: {

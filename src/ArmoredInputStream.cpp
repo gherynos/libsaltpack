@@ -28,11 +28,22 @@ namespace saltpack {
     const std::regex FOOTER_REGEXP(
             "[>\\n\\r\\t ]*END[>\\n\\r\\t ]+(?:([a-zA-Z0-9]+)[>\\n\\r\\t ]+)?SALTPACK[>\\n\\r\\t ]+((?:ENCRYPTED|SIGNED)[>\\n\\r\\t ]+MESSAGE|DETACHED[>\\n\\r\\t ]+SIGNATURE)");
 
+    const std::regex APP_REGEXP("[a-zA-Z0-9]+");
+
     const std::streampos BUFFER_SIZE = (std::streampos) Utils::baseXblockSize(BASE62, 32);
 
     const std::streampos ZERO = 0;
 
-    ArmoredInputStream::ArmoredInputStream(std::istream &in) : std::istream(this), input(in) {
+    ArmoredInputStream::ArmoredInputStream(std::istream &in, std::string app) : std::istream(this), input(in) {
+
+        if (app != "") {
+
+            std::smatch baseMatch;
+            if (!std::regex_match(app, baseMatch, APP_REGEXP))
+                throw SaltpackException("Wrong application name.");
+
+            this->app = app;
+        }
 
         buffer = std::stringstream();
         index = 0;
@@ -61,7 +72,11 @@ namespace saltpack {
             throw SaltpackException("Wrong header.");
         else
             mode = baseMatch[2];
+        if (app != "" && baseMatch[1] != app)
+            throw SaltpackException("Wrong application.");
     }
+
+    ArmoredInputStream::ArmoredInputStream(std::istream &in) : ArmoredInputStream(in, "") {}
 
     ArmoredInputStream::~ArmoredInputStream() {
 
@@ -118,6 +133,8 @@ namespace saltpack {
                     if (!std::regex_match(sFooter, base_match, FOOTER_REGEXP))
                         throw SaltpackException();
                     else if (base_match[2] != mode)
+                        throw SaltpackException();
+                    else if (app != "" && base_match[1] != app)
                         throw SaltpackException();
 
                     footerVerified = true;

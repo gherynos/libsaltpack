@@ -26,6 +26,8 @@ namespace saltpack {
     class ArmoredInputStream : public std::istream, std::streambuf {
 
     public:
+        ArmoredInputStream(std::istream &in, std::string app);
+
         ArmoredInputStream(std::istream &in);
 
         virtual ~ArmoredInputStream();
@@ -34,6 +36,7 @@ namespace saltpack {
 
     private:
         char ch;
+        std::string app;
         std::istream &input;
         std::stringstream buffer;
         BYTE_ARRAY dataBuffer;

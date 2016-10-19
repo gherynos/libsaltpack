@@ -25,6 +25,10 @@ namespace saltpack {
     class ArmoredOutputStream : public std::ostream, std::streambuf {
 
     public:
+        ArmoredOutputStream(std::ostream &out, std::string app, int mode, int lettersInWords, int wordsInPhrase);
+
+        ArmoredOutputStream(std::ostream &out, std::string app, int mode);
+
         ArmoredOutputStream(std::ostream &out, int mode, int lettersInWords, int wordsInPhrase);
 
         ArmoredOutputStream(std::ostream &out, int mode);
@@ -37,6 +41,7 @@ namespace saltpack {
 
     private:
         std::ostream &output;
+        std::string app;
         int mode;
         BYTE_ARRAY buffer;
         size_t count;
