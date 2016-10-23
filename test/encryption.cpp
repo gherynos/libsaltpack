@@ -182,7 +182,7 @@ TEST(encryption, armor) {
     // encrypt message
     std::stringstream out;
     saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_ENCRYPTION);
-    saltpack::MessageWriter *enc = new saltpack::MessageWriter(aOut, sender_secretkey, recipients, true);
+    saltpack::MessageWriter *enc = new saltpack::MessageWriter(aOut, sender_secretkey, recipients);
     enc->addBlock({'A', 'n', 'o', 't', 'h', 'e', 'r', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'});
     enc->finalise();
     aOut.finalise();
@@ -265,7 +265,7 @@ TEST(encryption, intentionally_anonymous_rec) {
     // encrypt message
     std::stringstream out;
 
-    saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, recipients, true);
+    saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, recipients);
     enc->addBlock({'A', ' '});
     enc->addBlock({'m', '3', 's', 'S'});
     enc->addBlock({'@', 'g', '!'});

@@ -33,7 +33,7 @@ int main(void) {
         // encrypt message
         std::stringstream out;
         saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_ENCRYPTION);
-        saltpack::MessageWriter *enc = new saltpack::MessageWriter(aOut, secretkey, recipients, false);
+        saltpack::MessageWriter *enc = new saltpack::MessageWriter(aOut, secretkey, recipients);
         enc->addBlock({'T', 'h', 'e', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'});
         enc->finalise();
         aOut.finalise();

@@ -78,8 +78,14 @@ namespace saltpack {
             macKeys.push_back(generateMacKey(headerHashTrunc, publickey, senderSecretkey));
     }
 
+    MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipients)
+            : MessageWriter(os, senderSecretkey, recipients, true) {}
+
     MessageWriter::MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipients, bool visibleRecipients)
             : MessageWriter(os, BYTE_ARRAY(0), recipients, visibleRecipients) {}
+
+    MessageWriter::MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipients) : MessageWriter(os, recipients,
+                                                                                                     true) {}
 
     MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, bool detatchedSignature) : output(os) {
 

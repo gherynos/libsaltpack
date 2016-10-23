@@ -28,7 +28,11 @@ namespace saltpack {
         MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipients,
                       bool visibleRecipients);
 
+        MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipients);
+
         MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipients, bool visibleRecipients);
+
+        MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipients);
 
         MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, bool detatchedSignature);
 
