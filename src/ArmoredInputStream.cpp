@@ -45,7 +45,6 @@ namespace saltpack {
             this->app = app;
         }
 
-        buffer = std::stringstream();
         index = 0;
         dataReady = false;
         footerReached = false;
