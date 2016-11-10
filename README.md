@@ -9,8 +9,15 @@ Dependencies
 * [msgpack](https://github.com/msgpack/msgpack-c) >= 2.0.0
 * [GMP](https://gmplib.org/) >= 6.0.0 (or [MPIR](http://mpir.org/) >= 2.6.0 on Windows)
 
-Encrypt/decrypt message
------------------------
+Documentation
+-------------
+
+The classes documentation can be found here: [https://gherynos.github.io/libsaltpack/annotated.html](https://gherynos.github.io/libsaltpack/annotated.html).
+
+Examples
+--------
+
+### Encrypt/decrypt message
 
 ```c++
 #include <saltpack.h>
@@ -68,10 +75,9 @@ int main(void) {
 }
 ```
 
-Sign/verify message
--------------------
+### Sign/verify message
 
-### Attached signature
+#### Attached signature
 
 ```c++
 #include <saltpack.h>
@@ -125,7 +131,7 @@ int main(void) {
 }
 ```
 
-### Detached signature
+#### Detached signature
 
 ```c++
 #include <saltpack.h>
@@ -174,7 +180,7 @@ int main(void) {
 Copyright and license
 ---------------------
 
-Copyright 2012-2016 Luca Zanconato (<luca.zanconato@nharyes.net>)
+Copyright 2016 Luca Zanconato (<luca.zanconato@nharyes.net>)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this work except in compliance with the License.
