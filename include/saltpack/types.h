@@ -20,11 +20,14 @@
 #include <iostream>
 #include <vector>
 
+/**
+ * @brief The saltpack library namespace.
+ */
 namespace saltpack {
 
-    typedef unsigned char BYTE;
+    typedef unsigned char BYTE; /**< An octet. */
 
-    typedef std::vector<BYTE> BYTE_ARRAY;
+    typedef std::vector<BYTE> BYTE_ARRAY; /**< An array of bytes. */
 }
 
 #endif //SALTPACK_TYPES_H

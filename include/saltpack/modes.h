@@ -19,11 +19,11 @@
 
 namespace saltpack {
 
-    const int MODE_ENCRYPTION = 0;
+    const int MODE_ENCRYPTION = 0; /**< Encryption mode, used in ArmoredOutputStream. */
 
-    const int MODE_ATTACHED_SIGNATURE = 1;
+    const int MODE_ATTACHED_SIGNATURE = 1; /**< Attached signature mode, used in ArmoredOutputStream. */
 
-    const int MODE_DETACHED_SIGNATURE = 2;
+    const int MODE_DETACHED_SIGNATURE = 2; /**< Detached signature mode, used in ArmoredOutputStream. */
 }
 
 #endif //SALTPACK_MODES_H

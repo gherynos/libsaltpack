@@ -22,21 +22,84 @@
 
 namespace saltpack {
 
+    /**
+     *  @brief Output Stream to generate BaseX armored content.
+     *
+     *  The alphabet used is BASE62.
+     */
     class ArmoredOutputStream : public std::ostream, std::streambuf {
 
     public:
+        /**
+         * Creates a new ArmoredInputStream instance for a specific application.
+         *
+         * @param out the destination output stream.
+         * @param app the application name that will be added to the header/footer of the message.
+         * @param mode the message mode, either saltpack::MODE_ENCRYPTION, saltpack::MODE_ATTACHED_SIGNATURE
+         * or saltpack::MODE_DETACHED_SIGNATURE.
+         * @param lettersInWords the number of letters before producing a space during the armoring.
+         * @param wordsInPhrase the number of words before producing a new line during the armoring.
+         *
+         * @throws SaltpackException
+         */
         ArmoredOutputStream(std::ostream &out, std::string app, int mode, int lettersInWords, int wordsInPhrase);
 
+        /**
+         * Creates a new ArmoredInputStream instance for a specific application.
+         * This instance will produce a space every 15 letters and a new line after 200 words.
+         *
+         * @param out the destination output stream.
+         * @param app the application name that will be added to the header/footer of the message.
+         * @param mode the message mode, either saltpack::MODE_ENCRYPTION, saltpack::MODE_ATTACHED_SIGNATURE or
+         * saltpack::MODE_DETACHED_SIGNATURE.
+         *
+         * @throws SaltpackException
+         */
         ArmoredOutputStream(std::ostream &out, std::string app, int mode);
 
+        /**
+         * Creates a new ArmoredInputStream instance.
+         *
+         * @param out the destination output stream.
+         * @param mode the message mode, either saltpack::MODE_ENCRYPTION, saltpack::MODE_ATTACHED_SIGNATURE or
+         * saltpack::MODE_DETACHED_SIGNATURE.
+         * @param lettersInWords the number of letters before producing a space during the armoring.
+         * @param wordsInPhrase the number of words before producing a new line during the armoring.
+         *
+         * @throws SaltpackException
+         */
         ArmoredOutputStream(std::ostream &out, int mode, int lettersInWords, int wordsInPhrase);
 
+        /**
+         * Creates a new ArmoredInputStream instance.
+         * This instance will produce a space every 15 letters and a new line after 200 words.
+         *
+         * @param out the destination output stream.
+         * @param mode the message mode, either saltpack::MODE_ENCRYPTION, saltpack::MODE_ATTACHED_SIGNATURE or
+         * saltpack::MODE_DETACHED_SIGNATURE.
+         *
+         * @throws SaltpackException
+         */
         ArmoredOutputStream(std::ostream &out, int mode);
 
+        /**
+         * Destructor.
+         */
         virtual ~ArmoredOutputStream();
 
+        /**
+         * Method overridden from std::streambuf (internal use only).
+         *
+         * @param __c the next character to output.
+         */
         virtual int overflow(int __c) override;
 
+        /**
+         * Finalises the stream. This method must be called when after MessageWriter#finalise() in order to
+         * flush the remaining characters and produce the footer.
+         *
+         * @throws SaltpackException
+         */
         void finalise();
 
     private:

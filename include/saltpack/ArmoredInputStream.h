@@ -23,15 +23,44 @@
 
 namespace saltpack {
 
+    /**
+     * @brief Input Stream to parse BaseX armored content.
+     *
+     *  The alphabet used is BASE62.
+     */
     class ArmoredInputStream : public std::istream, std::streambuf {
 
     public:
+        /**
+         * Creates a new ArmoredInputStream instance for a specific application.
+         *
+         * @param in the source input stream containing armored data.
+         * @param app the application name that will be verified in the header/footer of the message contained
+         * in the input stream.
+         *
+         * @throws SaltpackException
+         */
         ArmoredInputStream(std::istream &in, std::string app);
 
+        /**
+         * Creates a new ArmoredInputStream instance.
+         *
+         * @param in the source input stream containing armored data.
+         *
+         * @throws SaltpackException
+         */
         ArmoredInputStream(std::istream &in);
 
+        /**
+         * Destroyer.
+         */
         virtual ~ArmoredInputStream();
 
+        /**
+         * Method overridden from std::sreambuf (internal use only).
+         *
+         * @return the next available character.
+         */
         virtual int underflow() override;
 
     private:

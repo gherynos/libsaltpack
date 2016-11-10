@@ -21,6 +21,9 @@
 
 namespace saltpack {
 
+    /**
+     *  @brief Saltpack exception.
+     */
     class SaltpackException : public std::exception {
 
     public:
