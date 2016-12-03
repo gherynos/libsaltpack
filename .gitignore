@@ -8,3 +8,4 @@ Testing
 *.a
 saltpack-test
 ext/gtest/*
+cmake-build-debug
