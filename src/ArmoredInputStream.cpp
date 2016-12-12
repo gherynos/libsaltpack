@@ -80,6 +80,7 @@ namespace saltpack {
     ArmoredInputStream::~ArmoredInputStream() {
 
         dataBuffer.clear();
+        dataBuffer.shrink_to_fit();
     }
 
     int ArmoredInputStream::underflow() {

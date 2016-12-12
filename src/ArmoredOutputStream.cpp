@@ -91,6 +91,7 @@ namespace saltpack {
     ArmoredOutputStream::~ArmoredOutputStream() {
 
         buffer.clear();
+        buffer.shrink_to_fit();
     }
 
     void ArmoredOutputStream::finalise() {

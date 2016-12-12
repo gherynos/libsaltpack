@@ -135,6 +135,7 @@ namespace saltpack {
         for (BYTE_ARRAY b: macKeys)
             sodium_memzero(b.data(), b.size());
         buffer.clear();
+        buffer.shrink_to_fit();
     }
 
     std::string MessageWriter::generateEncryptionHeader(BYTE_ARRAY payloadKey, BYTE_ARRAY ephemeralSecretkey,
