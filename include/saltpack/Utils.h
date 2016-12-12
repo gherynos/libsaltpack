@@ -61,7 +61,7 @@ namespace saltpack {
         /**
          * Returns the number of required characters to represent in BaseX, for a given `alphabet`, `size` characters.
          *
-         * @param alphabet the aplhabet for the BaseX encoding.
+         * @param alphabet the alphabet for the BaseX encoding.
          * @param size the size of the data to represent.
          *
          * @return the number of characters required to encode `size` characters.
@@ -72,7 +72,7 @@ namespace saltpack {
          * Encodes the data in BaseX using the given `alphabet`.
          *
          * @param data the data to encode.
-         * @param alphabet the aplhabet for the BaseX encoding.
+         * @param alphabet the alphabet for the BaseX encoding.
          *
          * @return the encoded string.
          */
@@ -83,7 +83,7 @@ namespace saltpack {
          *
          * @param data the data to encode.
          * @param size the number of characters to encode from `data`.
-         * @param alphabet the aplhabet for the BaseX encoding.
+         * @param alphabet the alphabet for the BaseX encoding.
          *
          * @return the encoded string.
          */
@@ -93,7 +93,7 @@ namespace saltpack {
          * Decodes the string from BaseX and the given `alphabet`.
          *
          * @param data data the string to decode.
-         * @param alphabet the aplhabet for the BaseX decoding.
+         * @param alphabet the alphabet for the BaseX decoding.
          *
          * @throws SaltpackException
          *
