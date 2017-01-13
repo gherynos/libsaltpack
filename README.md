@@ -9,6 +9,22 @@ Dependencies
 * [msgpack](https://github.com/msgpack/msgpack-c) >= 2.0.0
 * [GMP](https://gmplib.org/) >= 6.0.0 (or [MPIR](http://mpir.org/) >= 2.6.0 on Windows)
 
+Building
+--------
+
+Here's how to build the static library on Linux or OSX:
+
+```bash
+cmake .
+make
+make test
+make install
+```
+
+The library compiles under Windows (tested using CMake 3.6.2 and Visual Studio Community 2015).
+
+Android Native Development Kit is also supported; see [libsaltpack-jni](https://github.com/Gherynos/libsaltpack-jni).
+
 Documentation
 -------------
 
@@ -180,7 +196,7 @@ int main(void) {
 Copyright and license
 ---------------------
 
-Copyright 2016 Luca Zanconato (<luca.zanconato@nharyes.net>)
+Copyright 2016-2017 Luca Zanconato (<luca.zanconato@nharyes.net>)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this work except in compliance with the License.
