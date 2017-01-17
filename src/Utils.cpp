@@ -156,4 +156,33 @@ namespace saltpack {
 
         return std::string(data.data());
     }
+
+    BYTE_ARRAY Utils::generateRandomBytes(size_t size) {
+
+        if (sodium_init() == -1)
+            throw SaltpackException("Unable to initialise libsodium.");
+
+        BYTE_ARRAY salt(size);
+        randombytes_buf(salt.data(), size);
+
+        return salt;
+    }
+
+    BYTE_ARRAY Utils::deriveKeyFromPassword(unsigned long long int keySize, std::string password, BYTE_ARRAY salt,
+                                            unsigned long long int opsLimit, size_t memLimit) {
+
+        if (sodium_init() == -1)
+            throw SaltpackException("Unable to initialise libsodium.");
+
+        if (salt.size() != crypto_pwhash_SALTBYTES)
+            throw SaltpackException("Wrong salt size.");
+
+        BYTE_ARRAY key(keySize);
+
+        if (crypto_pwhash(key.data(), keySize, password.c_str(), password.size(), salt.data(), opsLimit, memLimit,
+                          crypto_pwhash_ALG_DEFAULT) != 0)
+            throw SaltpackException("Errors while deriving key (out of memory).");
+
+        return key;
+    }
 }

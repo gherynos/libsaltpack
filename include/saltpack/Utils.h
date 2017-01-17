@@ -122,6 +122,33 @@ namespace saltpack {
          * @return the hexadecimal string.
          */
         static std::string binToHex(BYTE_ARRAY bin);
+
+        /**
+         * Generates some random bytes using `libsodium`.
+         *
+         * @param size the amount of bytes to generate.
+         *
+         * @throws SaltpackException
+         *
+         * @return the random bytes.
+         */
+        static BYTE_ARRAY generateRandomBytes(size_t size);
+
+        /**
+         * Wrapper for the `crypto_pwhash` function from `libsodium`.
+         *
+         * @param keySize the size of the key.
+         * @param password the password used to derive the key.
+         * @param salt the salt used to derive the key.
+         * @param opsLimit the maximum amount of computations to perform.
+         * @param memLimit the maximum amount of RAM that the function will use, in bytes.
+         *
+         * @throws SaltpackException
+         *
+         * @return the derived key.
+         */
+        static BYTE_ARRAY deriveKeyFromPassword(unsigned long long int keySize, std::string password, BYTE_ARRAY salt,
+                                                unsigned long long int opsLimit, size_t memLimit);
     };
 }
 

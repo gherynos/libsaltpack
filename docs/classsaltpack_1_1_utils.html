@@ -95,6 +95,10 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:ae6535ae4ab6ae924cabc63ebd368e5ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a306dc5be4c8b8e22d2f9545d0ccc8c68"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsaltpack_1_1_utils.html#a306dc5be4c8b8e22d2f9545d0ccc8c68">binToHex</a> (<a class="el" href="namespacesaltpack.html#aa6a64ac2677862691c6ac98d9956cfe7">BYTE_ARRAY</a> bin)</td></tr>
 <tr class="separator:a306dc5be4c8b8e22d2f9545d0ccc8c68"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17034c68f90f4a36613fccb80b616280"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacesaltpack.html#aa6a64ac2677862691c6ac98d9956cfe7">BYTE_ARRAY</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsaltpack_1_1_utils.html#a17034c68f90f4a36613fccb80b616280">generateRandomBytes</a> (size_t size)</td></tr>
+<tr class="separator:a17034c68f90f4a36613fccb80b616280"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59bc93045b99ae10ee3a3701cd25a2a1"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacesaltpack.html#aa6a64ac2677862691c6ac98d9956cfe7">BYTE_ARRAY</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsaltpack_1_1_utils.html#a59bc93045b99ae10ee3a3701cd25a2a1">deriveKeyFromPassword</a> (unsigned long long int keySize, std::string password, <a class="el" href="namespacesaltpack.html#aa6a64ac2677862691c6ac98d9956cfe7">BYTE_ARRAY</a> salt, unsigned long long int opsLimit, size_t memLimit)</td></tr>
+<tr class="separator:a59bc93045b99ae10ee3a3701cd25a2a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Utilities class. </p>
@@ -332,6 +336,78 @@ Static Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a59bc93045b99ae10ee3a3701cd25a2a1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a59bc93045b99ae10ee3a3701cd25a2a1">&sect;&nbsp;</a></span>deriveKeyFromPassword()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="namespacesaltpack.html#aa6a64ac2677862691c6ac98d9956cfe7">BYTE_ARRAY</a> saltpack::Utils::deriveKeyFromPassword </td>
+          <td>(</td>
+          <td class="paramtype">unsigned long long int&#160;</td>
+          <td class="paramname"><em>keySize</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>password</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacesaltpack.html#aa6a64ac2677862691c6ac98d9956cfe7">BYTE_ARRAY</a>&#160;</td>
+          <td class="paramname"><em>salt</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned long long int&#160;</td>
+          <td class="paramname"><em>opsLimit</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>memLimit</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Wrapper for the <code>crypto_pwhash</code> function from <code>libsodium</code>.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">keySize</td><td>the size of the key. </td></tr>
+    <tr><td class="paramname">password</td><td>the password used to derive the key. </td></tr>
+    <tr><td class="paramname">salt</td><td>the salt used to derive the key. </td></tr>
+    <tr><td class="paramname">opsLimit</td><td>the maximum amount of computations to perform. </td></tr>
+    <tr><td class="paramname">memLimit</td><td>the maximum amount of RAM that the function will use, in bytes.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname"><a class="el" href="classsaltpack_1_1_saltpack_exception.html" title="Saltpack exception. ">SaltpackException</a></td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the derived key. </dd></dl>
+
+</div>
+</div>
 <a id="aeec01519e769fa9a592a373c836b6131"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aeec01519e769fa9a592a373c836b6131">&sect;&nbsp;</a></span>derivePublickey()</h2>
 
@@ -419,6 +495,46 @@ Static Public Member Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a17034c68f90f4a36613fccb80b616280"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a17034c68f90f4a36613fccb80b616280">&sect;&nbsp;</a></span>generateRandomBytes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="namespacesaltpack.html#aa6a64ac2677862691c6ac98d9956cfe7">BYTE_ARRAY</a> saltpack::Utils::generateRandomBytes </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>size</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Generates some random bytes using <code>libsodium</code>.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">size</td><td>the amount of bytes to generate.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname"><a class="el" href="classsaltpack_1_1_saltpack_exception.html" title="Saltpack exception. ">SaltpackException</a></td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the random bytes. </dd></dl>
 
 </div>
 </div>
