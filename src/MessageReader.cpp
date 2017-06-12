@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2017 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 #include <sstream>
 #include <sodium.h>
 #include <fstream>
+#include <saltpack/Utils.h>
 #include "saltpack/MessageReader.h"
 #include "saltpack/HeaderPacket.h"
 #include "saltpack/SaltpackException.h"
@@ -189,10 +190,12 @@ namespace saltpack {
             stringStream << "Unrecognized format name: " << header.format << ".";
             throw SaltpackException(stringStream.str());
         }
-        if (header.version[0] != 1 || header.version[1] != 0) {
+        majorVersion = header.version[0];
+        minorVersion = header.version[1];
+        if ((majorVersion != 1 && majorVersion != 2) || header.version[1] != 0) {
 
             std::ostringstream stringStream;
-            stringStream << "Incompatible version: " << header.version[0] << "." << header.version[1] << ".";
+            stringStream << "Incompatible version: " << majorVersion << "." << minorVersion << ".";
             throw SaltpackException(stringStream.str());
         }
         if (header.mode != mode)
@@ -208,9 +211,13 @@ namespace saltpack {
         payloadKey = BYTE_ARRAY(32);
         for (unsigned long i = 0; i < header.recipientsList.size(); i++) {
 
+            BYTE_ARRAY nonce = PAYLOAD_KEY_BOX_NONCE;
+            if (majorVersion == 2)
+                nonce = generateRecipientSecretboxNonce((int) i);
+
             if (crypto_box_open_easy_afternm(payloadKey.data(), header.recipientsList[i].payloadKeyBox.data(),
                                              header.recipientsList[i].payloadKeyBox.size(),
-                                             PAYLOAD_KEY_BOX_NONCE.data(), k.data()) == 0) {
+                                             nonce.data(), k.data()) == 0) {
 
                 recipientIndex = (int) i;
             }
@@ -231,8 +238,17 @@ namespace saltpack {
             intentionallyAnonymous = header.ephemeralPublicKey == senderPublickey;
 
             // generate mac key
-            BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[24]);
-            macKey = generateMacKey(headerHashTrunc, senderPublickey, recipientSecretkey);
+            if (majorVersion == 1) {
+
+                BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[24]);
+                macKey = generateMacKey(headerHashTrunc, senderPublickey, recipientSecretkey);
+
+            } else if (majorVersion == 2) {
+
+                BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[16]);
+                macKey = generateMacKeyV2(headerHashTrunc, senderPublickey, recipientSecretkey,
+                                          header.ephemeralPublicKey, recipientSecretkey, recipientIndex);
+            }
 
         } else
             throw SaltpackException("Failed to find matching recipient.");
@@ -309,9 +325,18 @@ namespace saltpack {
             case MODE_ENCRYPTION: {
 
                 // decrypt packet
-                PayloadPacket packet;
-                oh.get().convert(packet);
-                return decryptPacket(packet);
+                if (majorVersion == 1) {
+
+                    PayloadPacket packet;
+                    oh.get().convert(packet);
+                    return decryptPacket(packet);
+
+                } else if (majorVersion == 2) {
+
+                    PayloadPacketV2 packet;
+                    oh.get().convert(packet);
+                    return decryptPacket(packet);
+                } // TODO: CHECK
             }
 
             case MODE_ATTACHED_SIGNATURE: {
@@ -360,6 +385,45 @@ namespace saltpack {
             packetIndex += 1;
         else
             lastBlockFound = true;
+
+        return message;
+    }
+
+    BYTE_ARRAY MessageReader::decryptPacket(PayloadPacketV2 packet) {
+
+        // payload secret box nonce
+        BYTE_ARRAY payloadSecretboxNonce = generatePayloadSecretboxNonce(packetIndex);
+
+        // concatenate header hash, payload secretbox nonce, final flag and payload secretbox
+        BYTE_ARRAY concat;
+        BYTE_ARRAY flag = BYTE_ARRAY(1);
+        flag[0] = (BYTE) packet.finalFlag;
+        concat.reserve(
+                headerHash.size() + payloadSecretboxNonce.size() + packet.payloadSecretbox.size() + flag.size());
+        concat.insert(concat.end(), headerHash.begin(), headerHash.end());
+        concat.insert(concat.end(), payloadSecretboxNonce.begin(), payloadSecretboxNonce.end());
+        concat.insert(concat.end(), flag.begin(), flag.end());
+        concat.insert(concat.end(), packet.payloadSecretbox.begin(), packet.payloadSecretbox.end());
+
+        // calculate hash
+        BYTE_ARRAY concatHash(crypto_hash_sha512_BYTES);
+        if (crypto_hash_sha512(concatHash.data(), concat.data(), concat.size()) != 0)
+            throw SaltpackException("Errors while calculating hash.");
+
+        // verify authenticator
+        if (crypto_auth_verify(packet.authenticatorsList[recipientIndex].data(), concatHash.data(),
+                               concatHash.size(), macKey.data()) != 0)
+            throw SaltpackException("Invalid authenticator.");
+
+        // decrypt payload
+        BYTE_ARRAY message(packet.payloadSecretbox.size() - crypto_secretbox_MACBYTES);
+        if (crypto_secretbox_open_easy(message.data(), packet.payloadSecretbox.data(),
+                                       packet.payloadSecretbox.size(),
+                                       payloadSecretboxNonce.data(), payloadKey.data()) != 0)
+            throw SaltpackException("Errors while decrypting payload.");
+
+        packetIndex += 1;
+        lastBlockFound = packet.finalFlag; // TODO: check final packet already reached
 
         return message;
     }

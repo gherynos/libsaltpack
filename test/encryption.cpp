@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2017 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,10 +39,9 @@ TEST(encryption, main) {
     std::stringstream out;
 
     saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
-    enc->addBlock({'A', ' '});
-    enc->addBlock({'m', '3', 's', 'S'});
-    enc->addBlock({'@', 'g', '{'});
-    enc->finalise();
+    enc->addBlock({'A', ' '}, false);
+    enc->addBlock({'m', '3', 's', 'S'}, false);
+    enc->addBlock({'@', 'g', '{'}, true);
 
     out.flush();
     delete enc;
@@ -86,10 +85,9 @@ TEST(encryption, failure_recipient) {
     std::stringstream out;
 
     saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
-    enc->addBlock({'A', ' '});
-    enc->addBlock({'m', '3', 's', 'S'});
-    enc->addBlock({'@', 'g', '{'});
-    enc->finalise();
+    enc->addBlock({'A', ' '}, false);
+    enc->addBlock({'m', '3', 's', 'S'}, false);
+    enc->addBlock({'@', 'g', '{'}, true);
 
     out.flush();
     delete enc;
@@ -134,8 +132,8 @@ TEST(encryption, failure_message) {
     std::stringstream out;
 
     saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
-    enc->addBlock({'A', ' ', 'm', '3', 's', 'S', '@', 'g', '{'});
-    enc->finalise();
+    enc->addBlock({'A', ' ', 'm', '3', 's', 'S', '@', 'g', '{'}, false);
+    enc->addBlock({}, true);
 
     out.flush();
     delete enc;
@@ -183,8 +181,7 @@ TEST(encryption, armor) {
     std::stringstream out;
     saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_ENCRYPTION);
     saltpack::MessageWriter *enc = new saltpack::MessageWriter(aOut, sender_secretkey, recipients);
-    enc->addBlock({'A', 'n', 'o', 't', 'h', 'e', 'r', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'});
-    enc->finalise();
+    enc->addBlock({'A', 'n', 'o', 't', 'h', 'e', 'r', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, true);
     aOut.finalise();
 
     out.flush();
@@ -223,10 +220,9 @@ TEST(encryption, armor) {
     std::stringstream out;
 
     saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, recipients, false);
-    enc->addBlock({'A', ' '});
-    enc->addBlock({'m', '3', 's', 'S'});
-    enc->addBlock({'@', 'g', '!'});
-    enc->finalise();
+    enc->addBlock({'A', ' '}, false);
+    enc->addBlock({'m', '3', 's', 'S'}, false);
+    enc->addBlock({'@', 'g', '!'}, true);
 
     out.flush();
     delete enc;
@@ -266,11 +262,10 @@ TEST(encryption, intentionally_anonymous_rec) {
     std::stringstream out;
 
     saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, recipients);
-    enc->addBlock({'A', ' '});
-    enc->addBlock({'m', '3', 's', 'S'});
-    enc->addBlock({'@', 'g', '!'});
-    enc->addBlock({'?'});
-    enc->finalise();
+    enc->addBlock({'A', ' '}, false);
+    enc->addBlock({'m', '3', 's', 'S'}, false);
+    enc->addBlock({'@', 'g', '!'}, false);
+    enc->addBlock({'?'}, true);
 
     out.flush();
     delete enc;

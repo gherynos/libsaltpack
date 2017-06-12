@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2017 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,10 +97,11 @@ namespace saltpack {
          * Adds a block to the current message.
          *
          * @param data the data for the block, maximum 1MB.
+         * @param final the flag defining the last packet of the message.
          *
          * @throws SaltpackException
          */
-        void addBlock(BYTE_ARRAY data);
+        void addBlock(BYTE_ARRAY data, bool final);
 
         /**
          * Finalises the message by adding the last block to the output stream.
@@ -130,7 +131,7 @@ namespace saltpack {
 
         BYTE_ARRAY generateAuthenticator(BYTE_ARRAY concat, BYTE_ARRAY recipientMacKey);
 
-        std::string generatePayloadPacket(BYTE_ARRAY message);
+        std::string generatePayloadPacket(BYTE_ARRAY message, bool final);
 
         std::string generateSignaturePayloadPacket(BYTE_ARRAY message);
     };

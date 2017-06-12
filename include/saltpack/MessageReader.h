@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2017 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 #include <msgpack.hpp>
 #include "Base.h"
 #include "PayloadPacket.h"
+#include "PayloadPacketV2.h"
 #include "SignaturePayloadPacket.h"
 
 namespace saltpack {
@@ -120,6 +121,8 @@ namespace saltpack {
         msgpack::unpacker unpacker;
         bool lastBlockFound;
         bool intentionallyAnonymous;
+        int majorVersion;
+        int minorVersion;
 
         BYTE_ARRAY senderPublickey;
 
@@ -128,6 +131,8 @@ namespace saltpack {
         void processSignatureHeader(std::vector<char> headerBin);
 
         BYTE_ARRAY decryptPacket(PayloadPacket packet);
+
+        BYTE_ARRAY decryptPacket(PayloadPacketV2 packet);
 
         BYTE_ARRAY verifyPacket(SignaturePayloadPacket packet);
     };

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-217 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #include "saltpack/MessageWriter.h"
 #include "saltpack/HeaderPacket.h"
 #include "saltpack/SignatureHeaderPacket.h"
-#include "saltpack/PayloadPacket.h"
+#include "saltpack/PayloadPacketV2.h"
 #include "saltpack/SignaturePayloadPacket.h"
 #include "saltpack/SaltpackException.h"
 #include "saltpack/Utils.h"
@@ -76,9 +76,15 @@ namespace saltpack {
             throw SaltpackException("Errors while calculating hash.");
 
         // generate mac keys for recipients
-        BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[24]);
-        for (auto const &publickey : recipients)
-            macKeys.push_back(generateMacKey(headerHashTrunc, publickey, senderSecretkey));
+        BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[16]);
+        int recipientIndex = 0;
+        for (auto const &publickey : recipients) {
+
+            macKeys.push_back(
+                    generateMacKeyV2(headerHashTrunc, publickey, senderSecretkey, publickey, ephemeralSecretkey,
+                                     recipientIndex));
+            recipientIndex++;
+        }
     }
 
     MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipients)
@@ -146,7 +152,7 @@ namespace saltpack {
         // generate header packet
         HeaderPacket headerPacket;
         headerPacket.format = "saltpack";
-        headerPacket.version = std::vector<int> {1, 0};
+        headerPacket.version = std::vector<int> {2, 0};
         headerPacket.mode = 0;
         headerPacket.ephemeralPublicKey = ephemeralPublickey;
 
@@ -159,14 +165,18 @@ namespace saltpack {
         // recipients list
         headerPacket.recipientsList = std::vector<HeaderPacketRecipient>();
         headerPacket.recipientsList.reserve(recipientsPublickeys.size());
+        int recipientIndex = 0;
         for (auto const &publickey : recipientsPublickeys) {
 
             HeaderPacketRecipient recipient;
 
+            // generate payload nonce
+            BYTE_ARRAY payloadSecretboxNonce = generateRecipientSecretboxNonce(recipientIndex);
+
             // generate payload key box for current recipient
             recipient.payloadKeyBox = BYTE_ARRAY(crypto_box_MACBYTES + payloadKey.size());
             if (crypto_box_easy(recipient.payloadKeyBox.data(), payloadKey.data(), payloadKey.size(),
-                                PAYLOAD_KEY_BOX_NONCE.data(),
+                                payloadSecretboxNonce.data(),
                                 publickey.data(), ephemeralSecretkey.data()) != 0)
                 throw SaltpackException("Errors while calculating payload key box.");
 
@@ -179,6 +189,7 @@ namespace saltpack {
                 recipient.recipientPublicKey = BYTE_ARRAY();
 
             headerPacket.recipientsList.push_back(recipient);
+            recipientIndex++;
         }
 
         // serialise header
@@ -234,7 +245,7 @@ namespace saltpack {
         return authenticator;
     }
 
-    void MessageWriter::addBlock(BYTE_ARRAY data) {
+    void MessageWriter::addBlock(BYTE_ARRAY data, bool final) {
 
         // check block size
         if (data.size() > 1024 * 1024)
@@ -244,7 +255,7 @@ namespace saltpack {
 
             case MODE_ENCRYPTION: {
 
-                output << generatePayloadPacket(data);
+                output << generatePayloadPacket(data, final);
             }
                 break;
 
@@ -270,12 +281,6 @@ namespace saltpack {
 
         // last packet
         switch (mode) {
-
-            case MODE_ENCRYPTION: {
-
-                output << generatePayloadPacket({});
-            }
-                break;
 
             case MODE_ATTACHED_SIGNATURE: {
 
@@ -314,9 +319,9 @@ namespace saltpack {
         }
     }
 
-    std::string MessageWriter::generatePayloadPacket(BYTE_ARRAY message) {
+    std::string MessageWriter::generatePayloadPacket(BYTE_ARRAY message, bool final) {
 
-        PayloadPacket payloadPacket;
+        PayloadPacketV2 payloadPacket;
 
         // payload secret box nonce
         BYTE_ARRAY payloadSecretboxNonce = generatePayloadSecretboxNonce(packetIndex);
@@ -330,9 +335,13 @@ namespace saltpack {
 
         // concatenate header hash, payload secretbox nonce and payload secretbox
         BYTE_ARRAY concat;
-        concat.reserve(headerHash.size() + payloadSecretboxNonce.size() + payloadPacket.payloadSecretbox.size());
+        BYTE_ARRAY flag = BYTE_ARRAY(1);
+        flag[0] = (BYTE) final;
+        concat.reserve(
+                headerHash.size() + payloadSecretboxNonce.size() + payloadPacket.payloadSecretbox.size() + flag.size());
         concat.insert(concat.end(), headerHash.begin(), headerHash.end());
         concat.insert(concat.end(), payloadSecretboxNonce.begin(), payloadSecretboxNonce.end());
+        concat.insert(concat.end(), flag.begin(), flag.end());
         concat.insert(concat.end(), payloadPacket.payloadSecretbox.begin(), payloadPacket.payloadSecretbox.end());
 
         // authenticators
@@ -340,6 +349,7 @@ namespace saltpack {
         payloadPacket.authenticatorsList.reserve(macKeys.size());
         for (auto const &mac_key : macKeys)
             payloadPacket.authenticatorsList.push_back(generateAuthenticator(concat, mac_key));
+        payloadPacket.finalFlag = final;
 
         // serialise packet
         msgpack::sbuffer buffer;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2017 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,12 @@ namespace saltpack {
 
         BYTE_ARRAY generatePayloadSecretboxNonce(int packetIndex);
 
+        BYTE_ARRAY generateRecipientSecretboxNonce(int recipientIndex);
+
         BYTE_ARRAY generateMacKey(BYTE_ARRAY headerHashTrunc, BYTE_ARRAY publickey, BYTE_ARRAY secretkey);
+
+        BYTE_ARRAY generateMacKeyV2(BYTE_ARRAY headerHashTrunc, BYTE_ARRAY senderPublic, BYTE_ARRAY senderSecret,
+                                    BYTE_ARRAY ephemeraPublic, BYTE_ARRAY ephemeralSecret, int recipientIndex);
 
         BYTE_ARRAY generateValueForSignature(int packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message);
     };
