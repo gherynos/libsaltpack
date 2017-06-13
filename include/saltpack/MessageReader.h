@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef SALTPACK_DECRYPTOR_H
-#define SALTPACK_DECRYPTOR_H
+#ifndef SALTPACK_MESSAGEREADER_H
+#define SALTPACK_MESSAGEREADER_H
 
 #include <msgpack.hpp>
 #include "Base.h"
@@ -130,12 +130,10 @@ namespace saltpack {
 
         void processSignatureHeader(std::vector<char> headerBin);
 
-        BYTE_ARRAY decryptPacket(PayloadPacket packet);
-
-        BYTE_ARRAY decryptPacket(PayloadPacketV2 packet);
+        BYTE_ARRAY decryptPacket(std::vector<BYTE_ARRAY> authenticatorsList, BYTE_ARRAY payloadSecretbox, bool final);
 
         BYTE_ARRAY verifyPacket(SignaturePayloadPacket packet);
     };
 }
 
-#endif //SALTPACK_DECRYPTOR_H
+#endif //SALTPACK_MESSAGEREADER_H

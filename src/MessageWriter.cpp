@@ -41,6 +41,7 @@ namespace saltpack {
 
         mode = MODE_ENCRYPTION;
         packetIndex = 0;
+        lastBlockAdded = false;
 
         // generate random payload key
         payloadKey = BYTE_ARRAY(32);
@@ -251,6 +252,10 @@ namespace saltpack {
         if (data.size() > 1024 * 1024)
             throw SaltpackException("Blocks must be at most 1MB.");
 
+        // check for final block already added
+        if (final && lastBlockAdded)
+            throw SaltpackException("Final block already added.");
+
         switch (mode) {
 
             case MODE_ENCRYPTION: {
@@ -356,6 +361,8 @@ namespace saltpack {
         msgpack::pack(buffer, payloadPacket);
 
         packetIndex += 1;
+        lastBlockAdded = final;
+
         return std::string(buffer.data(), buffer.size());
     }
 

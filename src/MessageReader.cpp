@@ -318,7 +318,11 @@ namespace saltpack {
             found = true;
 
         if (!found)
-            throw SaltpackException("Not enough data found to decode block.");
+            throw SaltpackException("Not enough data found to decode block (message truncated?).");
+
+        // check for final block already parsed
+        if (lastBlockFound)
+            throw SaltpackException("Final block already reached.");
 
         switch (mode) {
 
@@ -329,14 +333,16 @@ namespace saltpack {
 
                     PayloadPacket packet;
                     oh.get().convert(packet);
-                    return decryptPacket(packet);
+                    return decryptPacket(packet.authenticatorsList, packet.payloadSecretbox, true);
 
                 } else if (majorVersion == 2) {
 
                     PayloadPacketV2 packet;
                     oh.get().convert(packet);
-                    return decryptPacket(packet);
-                } // TODO: CHECK
+                    return decryptPacket(packet.authenticatorsList, packet.payloadSecretbox, packet.finalFlag);
+
+                } else
+                    throw SaltpackException("Wrong version.");
             }
 
             case MODE_ATTACHED_SIGNATURE: {
@@ -352,58 +358,30 @@ namespace saltpack {
         }
     }
 
-    BYTE_ARRAY MessageReader::decryptPacket(PayloadPacket packet) {
+    BYTE_ARRAY
+    MessageReader::decryptPacket(std::vector<BYTE_ARRAY> authenticatorsList, BYTE_ARRAY payloadSecretbox, bool final) {
 
         // payload secret box nonce
         BYTE_ARRAY payloadSecretboxNonce = generatePayloadSecretboxNonce(packetIndex);
 
-        // concatenate header hash, payload secretbox nonce and payload secretbox
-        BYTE_ARRAY concat;
-        concat.reserve(headerHash.size() + payloadSecretboxNonce.size() + packet.payloadSecretbox.size());
-        concat.insert(concat.end(), headerHash.begin(), headerHash.end());
-        concat.insert(concat.end(), payloadSecretboxNonce.begin(), payloadSecretboxNonce.end());
-        concat.insert(concat.end(), packet.payloadSecretbox.begin(), packet.payloadSecretbox.end());
+        // final flag (if applicable)
+        BYTE_ARRAY flag;
+        if (majorVersion == 2) {
 
-        // calculate hash
-        BYTE_ARRAY concatHash(crypto_hash_sha512_BYTES);
-        if (crypto_hash_sha512(concatHash.data(), concat.data(), concat.size()) != 0)
-            throw SaltpackException("Errors while calculating hash.");
+            flag = BYTE_ARRAY(1);
+            flag[0] = (BYTE) final;
 
-        // verify authenticator
-        if (crypto_auth_verify(packet.authenticatorsList[recipientIndex].data(), concatHash.data(),
-                               concatHash.size(), macKey.data()) != 0)
-            throw SaltpackException("Invalid authenticator.");
-
-        // decrypt payload
-        BYTE_ARRAY message(packet.payloadSecretbox.size() - crypto_secretbox_MACBYTES);
-        if (crypto_secretbox_open_easy(message.data(), packet.payloadSecretbox.data(),
-                                       packet.payloadSecretbox.size(),
-                                       payloadSecretboxNonce.data(), payloadKey.data()) != 0)
-            throw SaltpackException("Errors while decrypting payload.");
-
-        if (message.size() > 0)
-            packetIndex += 1;
-        else
-            lastBlockFound = true;
-
-        return message;
-    }
-
-    BYTE_ARRAY MessageReader::decryptPacket(PayloadPacketV2 packet) {
-
-        // payload secret box nonce
-        BYTE_ARRAY payloadSecretboxNonce = generatePayloadSecretboxNonce(packetIndex);
+        } else
+            flag = BYTE_ARRAY(0);
 
         // concatenate header hash, payload secretbox nonce, final flag and payload secretbox
         BYTE_ARRAY concat;
-        BYTE_ARRAY flag = BYTE_ARRAY(1);
-        flag[0] = (BYTE) packet.finalFlag;
         concat.reserve(
-                headerHash.size() + payloadSecretboxNonce.size() + packet.payloadSecretbox.size() + flag.size());
+                headerHash.size() + payloadSecretboxNonce.size() + payloadSecretbox.size() + flag.size());
         concat.insert(concat.end(), headerHash.begin(), headerHash.end());
         concat.insert(concat.end(), payloadSecretboxNonce.begin(), payloadSecretboxNonce.end());
         concat.insert(concat.end(), flag.begin(), flag.end());
-        concat.insert(concat.end(), packet.payloadSecretbox.begin(), packet.payloadSecretbox.end());
+        concat.insert(concat.end(), payloadSecretbox.begin(), payloadSecretbox.end());
 
         // calculate hash
         BYTE_ARRAY concatHash(crypto_hash_sha512_BYTES);
@@ -411,19 +389,19 @@ namespace saltpack {
             throw SaltpackException("Errors while calculating hash.");
 
         // verify authenticator
-        if (crypto_auth_verify(packet.authenticatorsList[recipientIndex].data(), concatHash.data(),
-                               concatHash.size(), macKey.data()) != 0)
+        if (crypto_auth_verify(authenticatorsList[recipientIndex].data(), concatHash.data(), concatHash.size(),
+                               macKey.data()) != 0)
             throw SaltpackException("Invalid authenticator.");
 
         // decrypt payload
-        BYTE_ARRAY message(packet.payloadSecretbox.size() - crypto_secretbox_MACBYTES);
-        if (crypto_secretbox_open_easy(message.data(), packet.payloadSecretbox.data(),
-                                       packet.payloadSecretbox.size(),
+        BYTE_ARRAY message(payloadSecretbox.size() - crypto_secretbox_MACBYTES);
+        if (crypto_secretbox_open_easy(message.data(), payloadSecretbox.data(), payloadSecretbox.size(),
                                        payloadSecretboxNonce.data(), payloadKey.data()) != 0)
             throw SaltpackException("Errors while decrypting payload.");
 
-        packetIndex += 1;
-        lastBlockFound = packet.finalFlag; // TODO: check final packet already reached
+        if (majorVersion == 2 || (majorVersion == 1 && message.size() > 0))
+            packetIndex += 1;
+        lastBlockFound = majorVersion == 2 ? final : message.size() <= 0;
 
         return message;
     }

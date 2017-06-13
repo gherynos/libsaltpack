@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef SALTPACK_ENCRYPTOR_H
-#define SALTPACK_ENCRYPTOR_H
+#ifndef SALTPACK_MESSAGEWRITER_H
+#define SALTPACK_MESSAGEWRITER_H
 
 #include <list>
 #include "Base.h"
@@ -116,6 +116,7 @@ namespace saltpack {
         BYTE_ARRAY payloadKey;
         BYTE_ARRAY headerHash;
         std::list<BYTE_ARRAY> macKeys;
+        bool lastBlockAdded;
 
         BYTE_ARRAY secretKey;
         BYTE_ARRAY buffer;
@@ -137,4 +138,4 @@ namespace saltpack {
     };
 }
 
-#endif //SALTPACK_ENCRYPTOR_H
+#endif //SALTPACK_MESSAGEWRITER_H
