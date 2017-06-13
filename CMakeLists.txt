@@ -13,7 +13,7 @@ include_directories("include")
 
 # Sources
 set(SOURCE_FILES src/ArmoredInputStream.cpp src/ArmoredOutputStream.cpp src/Base.cpp src/MessageReader.cpp src/MessageWriter.cpp src/Utils.cpp)
-set(HEADER_FILES include/saltpack.h include/saltpack/alphabets.h include/saltpack/ArmoredInputStream.h include/saltpack/ArmoredOutputStream.h include/saltpack/Base.h include/saltpack/HeaderPacket.h include/saltpack/HeaderPacketRecipient.h include/saltpack/MessageReader.h include/saltpack/MessageWriter.h include/saltpack/modes.h include/saltpack/PayloadPacket.h include/saltpack/PayloadPacketV2.h include/saltpack/SaltpackException.h include/saltpack/SignatureHeaderPacket.h include/saltpack/SignaturePayloadPacket.h include/saltpack/types.h include/saltpack/Utils.h)
+set(HEADER_FILES include/saltpack.h include/saltpack/alphabets.h include/saltpack/ArmoredInputStream.h include/saltpack/ArmoredOutputStream.h include/saltpack/Base.h include/saltpack/HeaderPacket.h include/saltpack/HeaderPacketRecipient.h include/saltpack/MessageReader.h include/saltpack/MessageWriter.h include/saltpack/modes.h include/saltpack/PayloadPacket.h include/saltpack/PayloadPacketV2.h include/saltpack/SaltpackException.h include/saltpack/SignatureHeaderPacket.h include/saltpack/SignaturePayloadPacket.h include/saltpack/SignaturePayloadPacketV2.h include/saltpack/types.h include/saltpack/Utils.h)
 
 # Library
 add_library(saltpack STATIC ${SOURCE_FILES} ${HEADER_FILES})
@@ -29,7 +29,7 @@ add_definitions(${MSVC_COMPILER_DEFS})
 enable_testing()
 include_directories(${GTEST_INCLUDE_DIRS})
 #add_executable(saltpack-test test/armor.cpp test/encryption.cpp test/signature.cpp test/utils.cpp test/main.cpp)
-add_executable(saltpack-test test/encryption.cpp test/main.cpp)
+add_executable(saltpack-test test/encryption.cpp test/signature.cpp test/main.cpp)
 add_dependencies(saltpack-test googletest)
 
 if(NOT WIN32 OR MINGW)

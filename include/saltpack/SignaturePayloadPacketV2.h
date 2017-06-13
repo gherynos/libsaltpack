@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2017 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef SALTPACK_SIGNATUREPAYLOADPACKET_H
-#define SALTPACK_SIGNATUREPAYLOADPACKET_H
+#ifndef SALTPACK_SIGNATUREPAYLOADPACKETV2_H
+#define SALTPACK_SIGNATUREPAYLOADPACKETV2_H
 
 #include <msgpack.hpp>
-#include "types.h"
+#include "SignaturePayloadPacket.h"
 
 namespace saltpack {
 
-    struct SignaturePayloadPacket {
+    struct SignaturePayloadPacketV2 : SignaturePayloadPacket {
 
-        BYTE_ARRAY signature;
-        BYTE_ARRAY payloadChunk;
+        bool finalFlag;
     };
 }
 
@@ -36,29 +35,32 @@ namespace msgpack {
         namespace adaptor {
 
             template<>
-            struct convert<saltpack::SignaturePayloadPacket> {
+            struct convert<saltpack::SignaturePayloadPacketV2> {
 
-                msgpack::object const &operator()(msgpack::object const &o, saltpack::SignaturePayloadPacket &v) const {
+                msgpack::object const &
+                operator()(msgpack::object const &o, saltpack::SignaturePayloadPacketV2 &v) const {
 
                     if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-                    if (o.via.array.size != 2) throw msgpack::type_error();
+                    if (o.via.array.size != 3) throw msgpack::type_error();
 
-                    v = saltpack::SignaturePayloadPacket();
-                    v.signature = o.via.array.ptr[0].as<saltpack::BYTE_ARRAY>();
-                    v.payloadChunk = o.via.array.ptr[1].as<saltpack::BYTE_ARRAY>();
+                    v = saltpack::SignaturePayloadPacketV2();
+                    v.finalFlag = o.via.array.ptr[0].as<bool>();
+                    v.signature = o.via.array.ptr[1].as<saltpack::BYTE_ARRAY>();
+                    v.payloadChunk = o.via.array.ptr[2].as<saltpack::BYTE_ARRAY>();
 
                     return o;
                 }
             };
 
             template<>
-            struct pack<saltpack::SignaturePayloadPacket> {
+            struct pack<saltpack::SignaturePayloadPacketV2> {
 
                 template<typename Stream>
-                packer <Stream> &
-                operator()(msgpack::packer<Stream> &o, saltpack::SignaturePayloadPacket const &v) const {
+                packer<Stream> &
+                operator()(msgpack::packer<Stream> &o, saltpack::SignaturePayloadPacketV2 const &v) const {
 
-                    o.pack_array(2);
+                    o.pack_array(3);
+                    o.pack(v.finalFlag);
                     o.pack(v.signature);
                     o.pack(v.payloadChunk);
 
@@ -69,4 +71,4 @@ namespace msgpack {
     }
 }
 
-#endif //SALTPACK_SIGNATUREPAYLOADPACKET_H
+#endif //SALTPACK_SIGNATUREPAYLOADPACKETV2_H

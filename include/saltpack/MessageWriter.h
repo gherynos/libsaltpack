@@ -103,13 +103,6 @@ namespace saltpack {
          */
         void addBlock(BYTE_ARRAY data, bool final);
 
-        /**
-         * Finalises the message by adding the last block to the output stream.
-         *
-         * @throws SaltpackException
-         */
-        void finalise();
-
     private:
         std::ostream &output;
         unsigned int packetIndex;
@@ -134,7 +127,7 @@ namespace saltpack {
 
         std::string generatePayloadPacket(BYTE_ARRAY message, bool final);
 
-        std::string generateSignaturePayloadPacket(BYTE_ARRAY message);
+        std::string generateSignaturePayloadPacket(BYTE_ARRAY message, bool final);
     };
 }
 

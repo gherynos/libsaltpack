@@ -19,11 +19,11 @@
 #include <sstream>
 #include <sodium.h>
 #include <fstream>
+#include <saltpack/SignaturePayloadPacketV2.h>
 #include "saltpack/MessageWriter.h"
 #include "saltpack/HeaderPacket.h"
 #include "saltpack/SignatureHeaderPacket.h"
 #include "saltpack/PayloadPacketV2.h"
-#include "saltpack/SignaturePayloadPacket.h"
 #include "saltpack/SaltpackException.h"
 #include "saltpack/Utils.h"
 #include "saltpack/modes.h"
@@ -107,6 +107,7 @@ namespace saltpack {
 
         mode = detatchedSignature ? MODE_DETACHED_SIGNATURE : MODE_ATTACHED_SIGNATURE;
         packetIndex = 0;
+        lastBlockAdded = false;
 
         // duplicate secret key
         secretKey.reserve(senderSecretkey.size());
@@ -205,7 +206,7 @@ namespace saltpack {
         // generate header packet
         SignatureHeaderPacket headerPacket;
         headerPacket.format = "saltpack";
-        headerPacket.version = std::vector<int> {1, 0};
+        headerPacket.version = std::vector<int> {2, 0};
         headerPacket.mode = detatchedSignature ? 2 : 1;
         headerPacket.senderPublicKey = senderPublickey;
 
@@ -266,7 +267,7 @@ namespace saltpack {
 
             case MODE_ATTACHED_SIGNATURE: {
 
-                output << generateSignaturePayloadPacket(data);
+                output << generateSignaturePayloadPacket(data, final);
             }
                 break;
 
@@ -274,48 +275,31 @@ namespace saltpack {
 
                 buffer.reserve(data.size());
                 buffer.insert(buffer.end(), data.begin(), data.end());
-            }
-                break;
 
-            default:
-                throw SaltpackException("Wrong mode.");
-        }
-    }
+                if (final) {
 
-    void MessageWriter::finalise() {
+                    // hash message
+                    BYTE_ARRAY hash = BYTE_ARRAY(crypto_hash_sha512_BYTES);
+                    if (crypto_hash_sha512(hash.data(), (const unsigned char *) buffer.data(), buffer.size()) != 0)
+                        throw SaltpackException("Errors while calculating hash.");
 
-        // last packet
-        switch (mode) {
+                    // concatenate SIGNATURE_DETACHED_SIGNATURE and hash
+                    BYTE_ARRAY concat;
+                    concat.reserve(SIGNATURE_DETACHED_SIGNATURE.size() + hash.size());
+                    concat.insert(concat.end(), SIGNATURE_DETACHED_SIGNATURE.begin(), SIGNATURE_DETACHED_SIGNATURE.end());
+                    concat.insert(concat.end(), hash.begin(), hash.end());
 
-            case MODE_ATTACHED_SIGNATURE: {
+                    // sign
+                    BYTE_ARRAY signature(crypto_sign_BYTES);
+                    if (crypto_sign_detached(signature.data(), NULL, concat.data(), concat.size(), secretKey.data()) != 0)
+                        throw SaltpackException("Errors while signing message.");
 
-                output << generateSignaturePayloadPacket({});
-            }
-                break;
+                    // serialise packet
+                    msgpack::sbuffer buffer;
+                    msgpack::pack(buffer, signature);
 
-            case MODE_DETACHED_SIGNATURE: {
-
-                // hash message
-                BYTE_ARRAY hash = BYTE_ARRAY(crypto_hash_sha512_BYTES);
-                if (crypto_hash_sha512(hash.data(), (const unsigned char *) buffer.data(), buffer.size()) != 0)
-                    throw SaltpackException("Errors while calculating hash.");
-
-                // concatenate SIGNATURE_DETACHED_SIGNATURE and hash
-                BYTE_ARRAY concat;
-                concat.reserve(SIGNATURE_DETACHED_SIGNATURE.size() + hash.size());
-                concat.insert(concat.end(), SIGNATURE_DETACHED_SIGNATURE.begin(), SIGNATURE_DETACHED_SIGNATURE.end());
-                concat.insert(concat.end(), hash.begin(), hash.end());
-
-                // sign
-                BYTE_ARRAY signature(crypto_sign_BYTES);
-                if (crypto_sign_detached(signature.data(), NULL, concat.data(), concat.size(), secretKey.data()) != 0)
-                    throw SaltpackException("Errors while signing message.");
-
-                // serialise packet
-                msgpack::sbuffer buffer;
-                msgpack::pack(buffer, signature);
-
-                output << std::string(buffer.data(), buffer.size());
+                    output << std::string(buffer.data(), buffer.size());
+                }
             }
                 break;
 
@@ -366,27 +350,32 @@ namespace saltpack {
         return std::string(buffer.data(), buffer.size());
     }
 
-    std::string MessageWriter::generateSignaturePayloadPacket(BYTE_ARRAY message) {
+    std::string MessageWriter::generateSignaturePayloadPacket(BYTE_ARRAY message, bool final) {
 
-        SignaturePayloadPacket payloadPacket;
+        SignaturePayloadPacketV2 payloadPacket;
 
         // payload chunk data
         payloadPacket.payloadChunk = message;
 
         // generate value for signature verification
-        BYTE_ARRAY value = generateValueForSignature(packetIndex, headerHash, message);
+        BYTE_ARRAY flag = BYTE_ARRAY(1);
+        flag[0] = (BYTE) final;
+        BYTE_ARRAY value = generateValueForSignature(packetIndex, headerHash, message, flag);
 
         // sign
         payloadPacket.signature = BYTE_ARRAY(crypto_sign_BYTES);
         if (crypto_sign_detached(payloadPacket.signature.data(), NULL, value.data(), value.size(),
                                  secretKey.data()) != 0)
             throw SaltpackException("Errors while signing message.");
+        payloadPacket.finalFlag = final;
 
         // serialise packet
         msgpack::sbuffer buffer;
         msgpack::pack(buffer, payloadPacket);
 
         packetIndex += 1;
+        lastBlockAdded = final;
+
         return std::string(buffer.data(), buffer.size());
     }
 }

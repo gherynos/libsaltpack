@@ -51,7 +51,7 @@ namespace saltpack {
         BYTE_ARRAY generateMacKeyV2(BYTE_ARRAY headerHashTrunc, BYTE_ARRAY senderPublic, BYTE_ARRAY senderSecret,
                                     BYTE_ARRAY ephemeraPublic, BYTE_ARRAY ephemeralSecret, int recipientIndex);
 
-        BYTE_ARRAY generateValueForSignature(int packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message);
+        BYTE_ARRAY generateValueForSignature(int packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message, BYTE_ARRAY flag);
     };
 }
 

@@ -20,6 +20,7 @@
 #include <sodium.h>
 #include <fstream>
 #include <saltpack/Utils.h>
+#include <saltpack/SignaturePayloadPacketV2.h>
 #include "saltpack/MessageReader.h"
 #include "saltpack/HeaderPacket.h"
 #include "saltpack/SaltpackException.h"
@@ -274,7 +275,9 @@ namespace saltpack {
             stringStream << "Unrecognized format name: " << header.format << ".";
             throw SaltpackException(stringStream.str());
         }
-        if (header.version[0] != 1 || header.version[1] != 0) {
+        majorVersion = header.version[0];
+        minorVersion = header.version[1];
+        if ((majorVersion != 1 && majorVersion != 2) || header.version[1] != 0) {
 
             std::ostringstream stringStream;
             stringStream << "Incompatible version: " << header.version[0] << "." << header.version[1] << ".";
@@ -348,9 +351,20 @@ namespace saltpack {
             case MODE_ATTACHED_SIGNATURE: {
 
                 // verify packet
-                SignaturePayloadPacket packet;
-                oh.get().convert(packet);
-                return verifyPacket(packet);
+                if (majorVersion == 1) {
+
+                    SignaturePayloadPacket packet;
+                    oh.get().convert(packet);
+                    return verifyPacket(packet.signature, packet.payloadChunk, true);
+
+                } else if (majorVersion == 2) {
+
+                    SignaturePayloadPacketV2 packet;
+                    oh.get().convert(packet);
+                    return verifyPacket(packet.signature, packet.payloadChunk, packet.finalFlag);
+
+                } else
+                    throw SaltpackException("Wrong version.");
             }
 
             default:
@@ -406,22 +420,30 @@ namespace saltpack {
         return message;
     }
 
-    BYTE_ARRAY MessageReader::verifyPacket(SignaturePayloadPacket packet) {
+    BYTE_ARRAY MessageReader::verifyPacket(BYTE_ARRAY signature, BYTE_ARRAY payloadChunk, bool final) {
+
+        // final flag (if applicable)
+        BYTE_ARRAY flag;
+        if (majorVersion == 2) {
+
+            flag = BYTE_ARRAY(1);
+            flag[0] = (BYTE) final;
+
+        } else
+            flag = BYTE_ARRAY(0);
 
         // generate value for signature verification
-        BYTE_ARRAY value = generateValueForSignature(packetIndex, headerHash, packet.payloadChunk);
+        BYTE_ARRAY value = generateValueForSignature(packetIndex, headerHash, payloadChunk, flag);
 
         // verify signature
-        if (crypto_sign_verify_detached(packet.signature.data(), value.data(), value.size(), senderPublickey.data()) !=
-            0)
+        if (crypto_sign_verify_detached(signature.data(), value.data(), value.size(), senderPublickey.data()) != 0)
             throw SaltpackException("Signature was forged or corrupt.");
 
-        if (packet.payloadChunk.size() > 0)
+        if (majorVersion == 2 || (majorVersion == 1 && payloadChunk.size() > 0))
             packetIndex += 1;
-        else
-            lastBlockFound = true;
+        lastBlockFound = majorVersion == 2 ? final : payloadChunk.size() <= 0;
 
-        return packet.payloadChunk;
+        return payloadChunk;
     }
 
     bool MessageReader::hasMoreBlocks() {

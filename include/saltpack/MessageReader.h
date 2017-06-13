@@ -132,7 +132,7 @@ namespace saltpack {
 
         BYTE_ARRAY decryptPacket(std::vector<BYTE_ARRAY> authenticatorsList, BYTE_ARRAY payloadSecretbox, bool final);
 
-        BYTE_ARRAY verifyPacket(SignaturePayloadPacket packet);
+        BYTE_ARRAY verifyPacket(BYTE_ARRAY signature, BYTE_ARRAY payloadChunk, bool final);
     };
 }
 

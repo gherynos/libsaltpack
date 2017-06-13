@@ -107,7 +107,8 @@ namespace saltpack {
         return payloadSecretboxNonce;
     }
 
-    BYTE_ARRAY Base::generateValueForSignature(int packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message) {
+    BYTE_ARRAY
+    Base::generateValueForSignature(int packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message, BYTE_ARRAY flag) {
 
         // packet sequence
         BYTE_ARRAY packetSequence({0, 0, 0, 0});
@@ -117,11 +118,12 @@ namespace saltpack {
         packetSequence.push_back((BYTE) ((packetIndex >> 8) & 0XFF));
         packetSequence.push_back((BYTE) ((packetIndex & 0XFF)));
 
-        // concatenate header hash, packet sequence and payload chunk
+        // concatenate header hash, packet sequence, flag and payload chunk
         BYTE_ARRAY concat;
         concat.reserve(headerHash.size() + packetSequence.size() + message.size());
         concat.insert(concat.end(), headerHash.begin(), headerHash.end());
         concat.insert(concat.end(), packetSequence.begin(), packetSequence.end());
+        concat.insert(concat.end(), flag.begin(), flag.end());
         concat.insert(concat.end(), message.begin(), message.end());
 
         // hash of the concatenation

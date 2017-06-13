@@ -28,8 +28,7 @@ TEST(signature, attached) {
     // sign message
     std::stringstream out;
     saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
-    sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'});
-    sig->finalise();
+    sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, true);
 
     out.flush();
     delete sig;
@@ -58,8 +57,7 @@ TEST(signature, attached_failure) {
     // sign message
     std::stringstream out;
     saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
-    sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'});
-    sig->finalise();
+    sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, true);
 
     out.flush();
     delete sig;
@@ -96,9 +94,8 @@ TEST(signature, attached_armor) {
     std::stringstream out;
     saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_ATTACHED_SIGNATURE);
     saltpack::MessageWriter *sig = new saltpack::MessageWriter(aOut, signer_secretkey, false);
-    sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' '});
-    sig->addBlock({'m', 'e', 's', 's', 'a', 'g', 'e'});
-    sig->finalise();
+    sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' '}, false);
+    sig->addBlock({'m', 'e', 's', 's', 'a', 'g', 'e'}, true);
     aOut.finalise();
 
     out.flush();
@@ -129,9 +126,8 @@ TEST(signature, detached) {
     // sign message
     std::stringstream out;
     saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, true);
-    sig->addBlock({'T', 'h', '3', ' ', 'm'});
-    sig->addBlock({'E', '$', 's', '4', 'g', '['});
-    sig->finalise();
+    sig->addBlock({'T', 'h', '3', ' ', 'm'}, false);
+    sig->addBlock({'E', '$', 's', '4', 'g', '['}, true);
 
     out.flush();
     delete sig;
@@ -167,8 +163,7 @@ TEST(signature, detached_armor) {
     std::stringstream out;
     saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_DETACHED_SIGNATURE);
     saltpack::MessageWriter *sig = new saltpack::MessageWriter(aOut, signer_secretkey, true);
-    sig->addBlock({'T', 'h', '3', ' ', 'm', 'E', '$', 's', '4', 'g', '!'});
-    sig->finalise();
+    sig->addBlock({'T', 'h', '3', ' ', 'm', 'E', '$', 's', '4', 'g', '!'}, true);
     aOut.finalise();
 
     out.flush();
@@ -194,5 +189,51 @@ TEST(signature, detached_armor) {
     } catch (const saltpack::SaltpackException ex) {
 
         ASSERT_STREQ(ex.what(), "Signature was forged or corrupt.");
+    }
+}
+
+TEST(signature, final_block_attached) {
+
+    saltpack::BYTE_ARRAY signer_secretkey(crypto_sign_SECRETKEYBYTES);
+    saltpack::BYTE_ARRAY signer_publickey(crypto_sign_PUBLICKEYBYTES);
+    saltpack::Utils::generateSignKeypair(signer_publickey, signer_secretkey);
+
+    try {
+
+        // sign message
+        std::stringstream out;
+        saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
+        sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, true);
+        sig->addBlock({' ', 'v', '2'}, true);
+
+        out.flush();
+        delete sig;
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Final block already added.");
+    }
+}
+
+TEST(signature, final_block_detached) {
+
+    saltpack::BYTE_ARRAY signer_secretkey(crypto_sign_SECRETKEYBYTES);
+    saltpack::BYTE_ARRAY signer_publickey(crypto_sign_PUBLICKEYBYTES);
+    saltpack::Utils::generateSignKeypair(signer_publickey, signer_secretkey);
+
+    try {
+
+        // sign message
+        std::stringstream out;
+        saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, true);
+        sig->addBlock({'T', 'h', '3', ' ', 'm', 'E', '$', 's', '4', 'g', '!'}, true);
+        sig->addBlock({'?'}, true);
+
+        out.flush();
+        delete sig;
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Final block already added.");
     }
 }
