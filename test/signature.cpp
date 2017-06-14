@@ -192,7 +192,73 @@ TEST(signature, detached_armor) {
     }
 }
 
-TEST(signature, final_block_attached) {
+TEST(signature, attached_message_truncated) {
+
+    saltpack::BYTE_ARRAY signer_secretkey(crypto_sign_SECRETKEYBYTES);
+    saltpack::BYTE_ARRAY signer_publickey(crypto_sign_PUBLICKEYBYTES);
+    saltpack::Utils::generateSignKeypair(signer_publickey, signer_secretkey);
+
+    // sign message
+    std::stringstream out;
+    saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
+    sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, false);
+
+    out.flush();
+    delete sig;
+
+    try {
+
+        // verify message
+        std::stringstream in(out.str());
+        std::stringstream msg;
+        saltpack::MessageReader dec(in);
+        while (dec.hasMoreBlocks()) {
+
+            saltpack::BYTE_ARRAY message = dec.getBlock();
+            msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+        }
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Not enough data found to decode block (message truncated?).");
+    }
+}
+
+TEST(signature, detached_message_truncated) {
+
+    saltpack::BYTE_ARRAY signer_secretkey(crypto_sign_SECRETKEYBYTES);
+    saltpack::BYTE_ARRAY signer_publickey(crypto_sign_PUBLICKEYBYTES);
+    saltpack::Utils::generateSignKeypair(signer_publickey, signer_secretkey);
+
+    // sign message
+    std::stringstream out;
+    saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, true);
+    sig->addBlock({'T', 'h', '3', ' ', 'm'}, false);
+    sig->addBlock({'E', '$', 's', '4', 'g', '['}, false);
+
+    out.flush();
+    delete sig;
+
+    try {
+
+        // verify message
+        std::stringstream in(out.str());
+        std::stringstream msg("Th3 mE$s4g[");
+        saltpack::MessageReader *dec = new saltpack::MessageReader(in, msg);
+        ASSERT_EQ(signer_publickey, dec->getSender());
+        delete dec;
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Signature not found.");
+    }
+}
+
+TEST(signature, attached_final_block) {
 
     saltpack::BYTE_ARRAY signer_secretkey(crypto_sign_SECRETKEYBYTES);
     saltpack::BYTE_ARRAY signer_publickey(crypto_sign_PUBLICKEYBYTES);
@@ -215,7 +281,7 @@ TEST(signature, final_block_attached) {
     }
 }
 
-TEST(signature, final_block_detached) {
+TEST(signature, detached_final_block) {
 
     saltpack::BYTE_ARRAY signer_secretkey(crypto_sign_SECRETKEYBYTES);
     saltpack::BYTE_ARRAY signer_publickey(crypto_sign_PUBLICKEYBYTES);
