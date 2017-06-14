@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2017 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -302,4 +302,57 @@ TEST(signature, detached_final_block) {
 
         ASSERT_STREQ(ex.what(), "Final block already added.");
     }
+}
+
+TEST(signature, attached_version_one) {
+
+    saltpack::BYTE_ARRAY signer_secretkey({245, 6, 38, 38, 136, 83, 114, 248, 171, 127, 74, 11, 45, 29, 126, 213, 7,
+                                           236, 174, 197, 99, 201, 193, 207, 16, 91, 166, 133, 141, 50, 144, 211, 199,
+                                           45, 196, 24, 141, 60, 173, 36, 11, 156, 148, 221, 212, 160, 252, 133, 136,
+                                           160, 73, 11, 23, 129, 243, 218, 57, 180, 252, 17, 133, 46, 244, 139});
+    saltpack::BYTE_ARRAY signer_publickey({199, 45, 196, 24, 141, 60, 173, 36, 11, 156, 148, 221, 212, 160, 252, 133,
+                                           136, 160, 73, 11, 23, 129, 243, 218, 57, 180, 252, 17, 133, 46, 244, 139});
+
+    std::string ciphertext = "BEGIN SALTPACK SIGNED MESSAGE. kYM5h1pg6qz9UMn j6G7KB2OUmwXTFd 8hHAxRyMXKWKOxs "
+            "bECTM8qEn3zYPTA s94LWmdVgpRAw9I fxsGWxHAkkzEaL1 PfDAsXLp9Zq5ymY 5dySiZQZ5uC3IKy 9VGvkwoHiY8tLW1 "
+            "iF5oHeppoqzIN0N 6ySAuKEqldHH8TL j4z3Q4x5C7Rp1lt 7uQljohrfLUO7qx 5EbIJbUQqM22Geh VFAaePwM5YjWGEg "
+            "k2um83NphtgtIZQ fW0Aivnts1DYmJ7 bZHBN0yidHwJ2FY 5kmC0vApVJrJfni PwhFaGfjlMnghwS Y5G2v0olHriQMTV "
+            "rEEy. END SALTPACK SIGNED MESSAGE.";
+
+    // verify message
+    std::stringstream in(ciphertext);
+    saltpack::ArmoredInputStream is(in);
+    std::stringstream msg;
+    saltpack::MessageReader *dec = new saltpack::MessageReader(is);
+    while (dec->hasMoreBlocks()) {
+
+        saltpack::BYTE_ARRAY message = dec->getBlock();
+        msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+    }
+    ASSERT_EQ(signer_publickey, dec->getSender());
+    delete dec;
+
+    ASSERT_EQ(msg.str(), "Signed message\n");
+}
+
+TEST(signature, detached_version_one) {
+
+    saltpack::BYTE_ARRAY signer_secretkey({245, 6, 38, 38, 136, 83, 114, 248, 171, 127, 74, 11, 45, 29, 126, 213, 7,
+                                           236, 174, 197, 99, 201, 193, 207, 16, 91, 166, 133, 141, 50, 144, 211, 199,
+                                           45, 196, 24, 141, 60, 173, 36, 11, 156, 148, 221, 212, 160, 252, 133, 136,
+                                           160, 73, 11, 23, 129, 243, 218, 57, 180, 252, 17, 133, 46, 244, 139});
+    saltpack::BYTE_ARRAY signer_publickey({199, 45, 196, 24, 141, 60, 173, 36, 11, 156, 148, 221, 212, 160, 252, 133,
+                                           136, 160, 73, 11, 23, 129, 243, 218, 57, 180, 252, 17, 133, 46, 244, 139});
+
+    std::string ciphertext = "BEGIN SALTPACK DETACHED SIGNATURE. kYM5h1pg6qz9UMn j6G7KBABYp9npL6 oT1KkalFeaDwWxs "
+            "bECTM8qEn3zYPTA s94LWmdVgpbwCki T35ZsJvycdnnkp5 xjaos54GAI71l9u lGzcrkDkh1iVWXY j8FY4EefSR9qMdi "
+            "p8bqfMDseqX84Y2 5dtmyvwTiGQKs1O B40DzEV9VHZbchf PVh04NGL8rZHdQf 1wzeX5z. END SALTPACK DETACHED SIGNATURE.";
+
+    // verify message
+    std::stringstream in(ciphertext);
+    std::stringstream msg("Signed message 2\n");
+    saltpack::ArmoredInputStream is(in);
+    saltpack::MessageReader *dec = new saltpack::MessageReader(is, msg);
+    ASSERT_EQ(signer_publickey, dec->getSender());
+    delete dec;
 }
