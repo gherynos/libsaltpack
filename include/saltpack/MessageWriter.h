@@ -88,6 +88,10 @@ namespace saltpack {
          */
         MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, bool detatchedSignature);
 
+        // TODO: add docs
+        MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipientsPublickeys,
+                      std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricalKeys);
+
         /**
          * Desctructor. Securely deletes the allocated buffers using `sodium_memzero`.
          */
@@ -114,12 +118,15 @@ namespace saltpack {
         BYTE_ARRAY secretKey;
         BYTE_ARRAY buffer;
 
-        std::string
-        generateEncryptionHeader(BYTE_ARRAY payloadKey, BYTE_ARRAY ephemeralSecretkey, BYTE_ARRAY ephemeralPublickey,
-                                 BYTE_ARRAY senderPublickey, std::list<BYTE_ARRAY> recipientsPublickeys,
-                                 bool visibleRecipients);
+        std::string generateEncryptionHeader(BYTE_ARRAY ephemeralSecretkey, BYTE_ARRAY ephemeralPublickey,
+                                             BYTE_ARRAY senderPublickey, std::list<BYTE_ARRAY> recipientsPublickeys,
+                                             bool visibleRecipients);
 
         std::string generateSignatureHeader(BYTE_ARRAY senderPublickey, bool detatchedSignature);
+
+        std::string generateSigncryptionHeader(BYTE_ARRAY ephemeralSecretkey, BYTE_ARRAY ephemeralPublickey,
+                                               BYTE_ARRAY senderPublickey, std::list<BYTE_ARRAY> recipientsPublickeys,
+                                               std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricalKeys);
 
         std::string encodeHeader(std::string header);
 
@@ -128,6 +135,8 @@ namespace saltpack {
         std::string generatePayloadPacket(BYTE_ARRAY message, bool final);
 
         std::string generateSignaturePayloadPacket(BYTE_ARRAY message, bool final);
+
+        std::string generateSigncryptionPayloadPacket(BYTE_ARRAY message, bool final);
     };
 }
 

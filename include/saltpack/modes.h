@@ -24,6 +24,8 @@ namespace saltpack {
     const int MODE_ATTACHED_SIGNATURE = 1; /**< Attached signature mode, used in ArmoredOutputStream. */
 
     const int MODE_DETACHED_SIGNATURE = 2; /**< Detached signature mode, used in ArmoredOutputStream. */
+
+    const int MODE_SIGNCRYPTION = 3; /**< Signcryption mode. */
 }
 
 #endif //SALTPACK_MODES_H
