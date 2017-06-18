@@ -62,6 +62,9 @@ namespace saltpack {
          */
         MessageReader(std::istream &is, std::istream &messageStream);
 
+        // TODO: add docs
+        MessageReader(std::istream &is, BYTE_ARRAY recipientSecretkey, std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey);
+
         /**
          * Desctructor. Securely deletes the allocated buffers using `sodium_memzero`.
          */
@@ -130,9 +133,13 @@ namespace saltpack {
 
         void processSignatureHeader(std::vector<char> headerBin);
 
+        void processSigncryptionHeader(std::vector<char> headerBin, BYTE_ARRAY recipientSecretkey, std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey);
+
         BYTE_ARRAY decryptPacket(std::vector<BYTE_ARRAY> authenticatorsList, BYTE_ARRAY payloadSecretbox, bool final);
 
         BYTE_ARRAY verifyPacket(BYTE_ARRAY signature, BYTE_ARRAY payloadChunk, bool final);
+
+        BYTE_ARRAY decryptPacket(BYTE_ARRAY payloadSecretbox, bool final);
     };
 }
 

@@ -89,8 +89,12 @@ namespace saltpack {
         MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, bool detatchedSignature);
 
         // TODO: add docs
+        MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipientsPublickeys,
+                      std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys);
+
+        // TODO: add docs
         MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipientsPublickeys,
-                      std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricalKeys);
+                      std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys);
 
         /**
          * Desctructor. Securely deletes the allocated buffers using `sodium_memzero`.
@@ -126,7 +130,7 @@ namespace saltpack {
 
         std::string generateSigncryptionHeader(BYTE_ARRAY ephemeralSecretkey, BYTE_ARRAY ephemeralPublickey,
                                                BYTE_ARRAY senderPublickey, std::list<BYTE_ARRAY> recipientsPublickeys,
-                                               std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricalKeys);
+                                               std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys);
 
         std::string encodeHeader(std::string header);
 

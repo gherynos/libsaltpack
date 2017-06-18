@@ -139,4 +139,93 @@ namespace saltpack {
 
         return lConcat;
     }
+
+    BYTE_ARRAY Base::deriveSharedKey(BYTE_ARRAY publickey, BYTE_ARRAY secretkey) {
+
+        BYTE_ARRAY sharedSymmetricKeyL(crypto_box_MACBYTES + ZEROES.size());
+        if (crypto_box_easy(sharedSymmetricKeyL.data(), ZEROES.data(), ZEROES.size(), DERIVED_SBOX_KEY.data(),
+                            publickey.data(), secretkey.data()) != 0)
+            throw SaltpackException("Errors while generating shared symmetric key.");
+
+        return BYTE_ARRAY(&sharedSymmetricKeyL[sharedSymmetricKeyL.size() - 32],
+                          &sharedSymmetricKeyL[sharedSymmetricKeyL.size()]);
+    }
+
+    BYTE_ARRAY Base::generateRecipientIdentifier(BYTE_ARRAY sharedSymmetricKey, BYTE_ARRAY payloadSecretboxNonce) {
+
+        crypto_auth_hmacsha512_state state;
+        BYTE_ARRAY concatHash = BYTE_ARRAY(crypto_auth_hmacsha512_BYTES);
+        if (crypto_auth_hmacsha512_init(&state, SIGNCRYPTION_BOX_KEY_IDENTIFIER.data(),
+                                        SIGNCRYPTION_BOX_KEY_IDENTIFIER.size()) != 0)
+            throw SaltpackException("Errors while initialising HMAC.");
+        if (crypto_auth_hmacsha512_update(&state, sharedSymmetricKey.data(), sharedSymmetricKey.size()) != 0)
+            throw SaltpackException("Errors while updating HMAC.");
+        if (crypto_auth_hmacsha512_update(&state, payloadSecretboxNonce.data(), payloadSecretboxNonce.size()) !=
+            0)
+            throw SaltpackException("Errors while updating HMAC.");
+        if (crypto_auth_hmacsha512_final(&state, concatHash.data()) != 0)
+            throw SaltpackException("Errors while calculating HMAC.");
+
+        return BYTE_ARRAY(&concatHash[0], &concatHash[32]);
+    }
+
+    BYTE_ARRAY Base::deriveSharedKeySymmetric(BYTE_ARRAY publickey, BYTE_ARRAY secretkey) {
+
+        crypto_auth_hmacsha512_state state;
+        BYTE_ARRAY concatHash = BYTE_ARRAY(crypto_auth_hmacsha512_BYTES);
+        if (crypto_auth_hmacsha512_init(&state, SIGNCRYPTION_DERIVED_SYMMETRIC_KEY.data(),
+                                        SIGNCRYPTION_DERIVED_SYMMETRIC_KEY.size()) != 0)
+            throw SaltpackException("Errors while initialising HMAC.");
+        if (crypto_auth_hmacsha512_update(&state, publickey.data(), publickey.size()) != 0)
+            throw SaltpackException("Errors while updating HMAC.");
+        if (crypto_auth_hmacsha512_update(&state, secretkey.data(), secretkey.size()) !=
+            0)
+            throw SaltpackException("Errors while updating HMAC.");
+        if (crypto_auth_hmacsha512_final(&state, concatHash.data()) != 0)
+            throw SaltpackException("Errors while calculating HMAC.");
+
+        return BYTE_ARRAY(&concatHash[0], &concatHash[32]);
+    }
+
+    BYTE_ARRAY Base::generateSigncryptionPacketNonce(BYTE_ARRAY headerHash, int packetIndex, bool final) {
+
+        BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[16]);
+        BYTE_ARRAY nonce;
+        nonce.reserve(headerHashTrunc.size() + 8);
+        nonce.insert(nonce.end(), headerHashTrunc.begin(), headerHashTrunc.end());
+        nonce.insert(nonce.end(), ZEROES.begin(), ZEROES.end() - 28);
+        nonce.push_back((BYTE) ((packetIndex >> 24) & 0xFF));
+        nonce.push_back((BYTE) ((packetIndex >> 16) & 0xFF));
+        nonce.push_back((BYTE) ((packetIndex >> 8) & 0XFF));
+        nonce.push_back((BYTE) ((packetIndex & 0XFF)));
+        if (final)
+            nonce[15] |= (BYTE) 1;
+        else
+            nonce[15] &= (BYTE) 254;
+
+        return nonce;
+    }
+
+    BYTE_ARRAY
+    Base::generateSignatureInput(BYTE_ARRAY packetNonce, BYTE_ARRAY headerHash, BYTE_ARRAY message, bool final) {
+
+        // calculate hash of the plaintext
+        BYTE_ARRAY hash = BYTE_ARRAY(crypto_hash_sha512_BYTES);
+        if (crypto_hash_sha512(hash.data(), message.data(), message.size()) != 0)
+            throw SaltpackException("Errors while calculating hash.");
+
+        BYTE_ARRAY signatureInput;
+        BYTE_ARRAY flag = BYTE_ARRAY(1);
+        flag[0] = (BYTE) final;
+        signatureInput.reserve(
+                ENCRYPTED_SIGNATURE.size() + 1 + headerHash.size() + packetNonce.size() + flag.size() + hash.size());
+        signatureInput.insert(signatureInput.end(), ENCRYPTED_SIGNATURE.begin(), ENCRYPTED_SIGNATURE.end());
+        signatureInput.insert(signatureInput.end(), ZEROES.begin(), ZEROES.begin() + 1);
+        signatureInput.insert(signatureInput.end(), headerHash.begin(), headerHash.end());
+        signatureInput.insert(signatureInput.end(), packetNonce.begin(), packetNonce.end());
+        signatureInput.insert(signatureInput.end(), flag.begin(), flag.end());
+        signatureInput.insert(signatureInput.end(), hash.begin(), hash.end());
+
+        return signatureInput;
+    }
 }

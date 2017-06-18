@@ -28,8 +28,8 @@ namespace saltpack {
                                              '_', 'k', 'e', 'y', '_', 's', 'b', 'o', 'x'};
         const BYTE_ARRAY PAYLOAD_KEY_BOX_NONCE = {'s', 'a', 'l', 't', 'p', 'a', 'c', 'k', '_', 'p', 'a', 'y', 'l', 'o',
                                                   'a', 'd', '_', 'k', 'e', 'y', '_', 'b', 'o', 'x'};
-        const BYTE_ARRAY ZEROES = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   0, 0, 0, 0};
+        const BYTE_ARRAY ZEROES = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        const BYTE_ARRAY ZEROES_64 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         const BYTE_ARRAY SIGNATURE_ATTACHED_SIGNATURE = {'s', 'a', 'l', 't', 'p', 'a', 'c', 'k', ' ', 'a', 't', 't',
                                                          'a', 'c', 'h', 'e', 'd', ' ', 's', 'i', 'g', 'n', 'a', 't',
                                                          'u', 'r', 'e', 0};
@@ -65,6 +65,16 @@ namespace saltpack {
 
         BYTE_ARRAY
         generateValueForSignature(int packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message, BYTE_ARRAY flag);
+
+        BYTE_ARRAY deriveSharedKey(BYTE_ARRAY publickey, BYTE_ARRAY secretkey);
+
+        BYTE_ARRAY deriveSharedKeySymmetric(BYTE_ARRAY publickey, BYTE_ARRAY secretkey);
+
+        BYTE_ARRAY generateRecipientIdentifier(BYTE_ARRAY sharedSymmetricKey, BYTE_ARRAY payloadSecretboxNonce);
+
+        BYTE_ARRAY generateSigncryptionPacketNonce(BYTE_ARRAY headerHash, int packetIndex, bool final);
+
+        BYTE_ARRAY generateSignatureInput(BYTE_ARRAY packetNonce, BYTE_ARRAY headerHash, BYTE_ARRAY message, bool final);
     };
 }
 

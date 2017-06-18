@@ -19,8 +19,9 @@
 #include <sstream>
 #include <sodium.h>
 #include <fstream>
-#include <saltpack/Utils.h>
-#include <saltpack/SignaturePayloadPacketV2.h>
+#include "saltpack/Utils.h"
+#include "saltpack/SignaturePayloadPacketV2.h"
+#include "saltpack/SigncryptionPayloadPacket.h"
 #include "saltpack/MessageReader.h"
 #include "saltpack/HeaderPacket.h"
 #include "saltpack/SaltpackException.h"
@@ -161,6 +162,44 @@ namespace saltpack {
             throw SaltpackException("Signature was forged or corrupt.");
     }
 
+    MessageReader::MessageReader(std::istream &is, BYTE_ARRAY recipientSecretkey,
+                                 std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey) : input(is) {
+
+        if (sodium_init() == -1)
+            throw SaltpackException("Unable to initialise libsodium.");
+
+        if (recipientSecretkey.size() != 0 && recipientSecretkey.size() != crypto_box_SECRETKEYBYTES)
+            throw saltpack::SaltpackException("Wrong size for recipientSecretkey");
+
+        if (symmetricKey.first.size() > 0 && symmetricKey.second.size() != crypto_secretbox_KEYBYTES)
+            throw saltpack::SaltpackException("Wrong size for symmetricKey");
+
+        std::vector<char> headerBin;
+        while (!input.eof()) {
+
+            // read buffer
+            unpacker.reserve_buffer(BUFFER_SIZE);
+            input.read(unpacker.buffer(), BUFFER_SIZE);
+            long count = input.gcount();
+            unpacker.buffer_consumed((size_t) count);
+
+            // try to extract object
+            msgpack::object_handle oh;
+            if (unpacker.next(oh)) {
+
+                oh.get().convert(headerBin);
+                break;
+            }
+        }
+
+        macKey = BYTE_ARRAY(32);
+        mode = MODE_SIGNCRYPTION;
+        processSigncryptionHeader(headerBin, recipientSecretkey, symmetricKey);
+
+        packetIndex = 0;
+        lastBlockFound = false;
+    }
+
     MessageReader::~MessageReader() {
 
         sodium_memzero(headerHash.data(), headerHash.size());
@@ -193,7 +232,7 @@ namespace saltpack {
         }
         majorVersion = header.version[0];
         minorVersion = header.version[1];
-        if ((majorVersion != 1 && majorVersion != 2) || header.version[1] != 0) {
+        if ((majorVersion != 1 && majorVersion != 2) || minorVersion != 0) {
 
             std::ostringstream stringStream;
             stringStream << "Incompatible version: " << majorVersion << "." << minorVersion << ".";
@@ -277,10 +316,10 @@ namespace saltpack {
         }
         majorVersion = header.version[0];
         minorVersion = header.version[1];
-        if ((majorVersion != 1 && majorVersion != 2) || header.version[1] != 0) {
+        if ((majorVersion != 1 && majorVersion != 2) || minorVersion != 0) {
 
             std::ostringstream stringStream;
-            stringStream << "Incompatible version: " << header.version[0] << "." << header.version[1] << ".";
+            stringStream << "Incompatible version: " << majorVersion << "." << minorVersion << ".";
             throw SaltpackException(stringStream.str());
         }
         if (header.mode != mode)
@@ -289,13 +328,117 @@ namespace saltpack {
         senderPublickey = header.senderPublicKey;
     }
 
-    BYTE_ARRAY MessageReader::getBlock() {
+    void MessageReader::processSigncryptionHeader(std::vector<char> headerBin, BYTE_ARRAY recipientSecretkey,
+                                                  std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey) {
 
-        if (mode != MODE_ENCRYPTION && mode != MODE_ATTACHED_SIGNATURE)
+        // generate header hash
+        headerHash = BYTE_ARRAY(crypto_hash_sha512_BYTES);
+        if (crypto_hash_sha512(headerHash.data(), (const unsigned char *) headerBin.data(), headerBin.size()) != 0)
+            throw SaltpackException("Errors while calculating hash.");
+
+        // deserialize header packet
+        msgpack::object_handle oh = msgpack::unpack(headerBin.data(), headerBin.size());
+        msgpack::object obj = oh.get();
+        HeaderPacket header;
+        obj.convert(header);
+
+        // sanity check
+        if (header.format != "saltpack") {
+
+            std::ostringstream stringStream;
+            stringStream << "Unrecognized format name: " << header.format << ".";
+            throw SaltpackException(stringStream.str());
+        }
+        majorVersion = header.version[0];
+        minorVersion = header.version[1];
+        if (majorVersion != 2 || minorVersion != 0) {
+
+            std::ostringstream stringStream;
+            stringStream << "Incompatible version: " << majorVersion << "." << minorVersion << ".";
+            throw SaltpackException(stringStream.str());
+        }
+        if (header.mode != mode)
             throw SaltpackException("Wrong mode.");
 
+        // derive shared symmetric key
+        BYTE_ARRAY sharedSymmetricKey = deriveSharedKey(header.ephemeralPublicKey, recipientSecretkey);
+
+        recipientIndex = -1;
+        payloadKey = BYTE_ARRAY(32);
+
+        if (recipientSecretkey.size() > 0) {
+
+            // try to open the key boxes with Curve25519 key
+            for (unsigned long i = 0; i < header.recipientsList.size(); i++) {
+
+                // generate nonce
+                BYTE_ARRAY payloadSecretboxNonce = generateRecipientSecretboxNonce((int) i);
+
+                // compute and verify identifier
+                BYTE_ARRAY identifier = generateRecipientIdentifier(sharedSymmetricKey, payloadSecretboxNonce);
+                if (std::equal(identifier.begin(), identifier.begin() + identifier.size(),
+                               header.recipientsList[i].recipientPublicKey.begin())) {
+
+                    recipientIndex = (int) i;
+                }
+
+                recipients.push_back(header.recipientsList[i].recipientPublicKey);
+            }
+        }
+
+        if (recipientIndex == -1 && symmetricKey.first.size() > 0) {
+
+            // look for symmetric key identifier
+            for (unsigned long i = 0; i < header.recipientsList.size(); i++) {
+
+                if (std::equal(symmetricKey.first.begin(), symmetricKey.first.begin() + symmetricKey.first.size(),
+                               header.recipientsList[i].recipientPublicKey.begin())) {
+
+                    recipientIndex = (int) i;
+
+                    // update shared symmetric key
+                    sharedSymmetricKey = deriveSharedKeySymmetric(header.ephemeralPublicKey, symmetricKey.second);
+                }
+
+                if (recipientSecretkey.size() <= 0)
+                    recipients.push_back(header.recipientsList[i].recipientPublicKey);
+            }
+        }
+
+        if (recipientIndex != -1) {
+
+            BYTE_ARRAY payloadSecretboxNonce = generateRecipientSecretboxNonce(recipientIndex);
+
+            // decrypt payload key
+            if (crypto_secretbox_open_easy(payloadKey.data(),
+                                           header.recipientsList[recipientIndex].payloadKeyBox.data(),
+                                           header.recipientsList[recipientIndex].payloadKeyBox.size(),
+                                           payloadSecretboxNonce.data(), sharedSymmetricKey.data()) != 0)
+                throw SaltpackException("Errors while getting payload key.");
+
+            // open the sender secretbox
+            senderPublickey = BYTE_ARRAY(crypto_box_PUBLICKEYBYTES);
+            if (crypto_secretbox_open_easy(senderPublickey.data(), header.senderSecretbox.data(),
+                                           header.senderSecretbox.size(), SENDER_KEY_NONCE.data(), payloadKey.data()) !=
+                0)
+                throw SaltpackException("Errors while getting sender public key.");
+
+            // intentionally anonymous message?
+            intentionallyAnonymous = std::equal(senderPublickey.begin(),
+                                                senderPublickey.begin() + senderPublickey.size(), ZEROES.begin());
+
+        } else
+            throw SaltpackException("Failed to find matching recipient.");
+    }
+
+    BYTE_ARRAY MessageReader::getBlock() {
+
+        if (mode != MODE_ENCRYPTION && mode != MODE_ATTACHED_SIGNATURE && mode != MODE_SIGNCRYPTION)
+            throw SaltpackException("Wrong mode.");
+
+        // check for final block already parsed
         if (lastBlockFound)
-            return BYTE_ARRAY();
+            throw SaltpackException("Final block already reached.");
 
         // try to extract object
         msgpack::object_handle oh;
@@ -322,10 +465,6 @@ namespace saltpack {
 
         if (!found)
             throw SaltpackException("Not enough data found to decode block (message truncated?).");
-
-        // check for final block already parsed
-        if (lastBlockFound)
-            throw SaltpackException("Final block already reached.");
 
         switch (mode) {
 
@@ -365,6 +504,14 @@ namespace saltpack {
 
                 } else
                     throw SaltpackException("Wrong version.");
+            }
+
+            case MODE_SIGNCRYPTION: {
+
+                // decrypt packet
+                SigncryptionPayloadPacket packet;
+                oh.get().convert(packet);
+                return decryptPacket(packet.signcryptedChunk, packet.finalFlag);
             }
 
             default:
@@ -446,9 +593,43 @@ namespace saltpack {
         return payloadChunk;
     }
 
+    BYTE_ARRAY MessageReader::decryptPacket(BYTE_ARRAY payloadSecretbox, bool final) {
+
+        // packet nonce
+        BYTE_ARRAY nonce = generateSigncryptionPacketNonce(headerHash, packetIndex, final);
+
+        // decrypt chunk
+        BYTE_ARRAY chunk(payloadSecretbox.size() - crypto_secretbox_MACBYTES);
+        if (crypto_secretbox_open_easy(chunk.data(), payloadSecretbox.data(), payloadSecretbox.size(), nonce.data(),
+                                       payloadKey.data()) != 0)
+            throw SaltpackException("Errors while decrypting payload.");
+
+        // extract signature and message from chunk
+        BYTE_ARRAY detachedSignature(&chunk[0], &chunk[64]);
+        BYTE_ARRAY message(&chunk[64], &chunk[chunk.size()]);
+
+        // compute the signature input
+        BYTE_ARRAY signatureInput = generateSignatureInput(nonce, headerHash, message, final);
+
+        if (!intentionallyAnonymous) {
+
+            std::cout << "VERIFY SIGNATURE" << std::endl;
+
+            // verify the signature
+            if (crypto_sign_verify_detached(detachedSignature.data(), signatureInput.data(), signatureInput.size(),
+                                            senderPublickey.data()) != 0)
+                throw SaltpackException("Signature was forged or corrupt.");
+        }
+
+        packetIndex += 1;
+        lastBlockFound = final;
+
+        return message;
+    }
+
     bool MessageReader::hasMoreBlocks() {
 
-        if (mode != MODE_ENCRYPTION && mode != MODE_ATTACHED_SIGNATURE)
+        if (mode != MODE_ENCRYPTION && mode != MODE_ATTACHED_SIGNATURE && mode != MODE_SIGNCRYPTION)
             throw SaltpackException("Wrong mode.");
 
         return !lastBlockFound;
@@ -466,7 +647,7 @@ namespace saltpack {
 
     bool MessageReader::isIntentionallyAnonymous() {
 
-        if (mode != MODE_ENCRYPTION)
+        if (mode != MODE_ENCRYPTION && mode != MODE_SIGNCRYPTION)
             throw SaltpackException("Wrong mode.");
 
         return intentionallyAnonymous;

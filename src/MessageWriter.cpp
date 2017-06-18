@@ -138,12 +138,12 @@ namespace saltpack {
 
     MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey,
                                  std::list<BYTE_ARRAY> recipientsPublickeys,
-                                 std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricalKeys) : output(os) {
+                                 std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys) : output(os) {
 
         if (sodium_init() == -1)
             throw SaltpackException("Unable to initialise libsodium.");
 
-        if (senderSecretkey.size() != crypto_sign_SECRETKEYBYTES)
+        if (senderSecretkey.size() != crypto_sign_SECRETKEYBYTES && senderSecretkey.size() != 0)
             throw saltpack::SaltpackException("Wrong size for senderSecretkey");
 
         mode = MODE_SIGNCRYPTION;
@@ -165,10 +165,13 @@ namespace saltpack {
         if (crypto_box_keypair(ephemeralPublicKey.data(), ephemeralSecretkey.data()) != 0)
             throw SaltpackException("Errors while generating keypair.");
 
+        // anonymous sender?
+        bool anonymousSender = senderSecretkey.size() == 0;
+
         // generate header
-        BYTE_ARRAY senderPublickey = Utils::derivePublickey(senderSecretkey);
+        BYTE_ARRAY senderPublickey = anonymousSender ? ZEROES : Utils::derivePublickey(senderSecretkey);
         std::string header = generateSigncryptionHeader(ephemeralSecretkey, ephemeralPublicKey, senderPublickey,
-                                                        recipientsPublickeys, symmetricalKeys);
+                                                        recipientsPublickeys, symmetricKeys);
 
         // encode header
         std::string header_enc = encodeHeader(header);
@@ -179,6 +182,10 @@ namespace saltpack {
         if (crypto_hash_sha512(headerHash.data(), (const unsigned char *) header.data(), header.size()) != 0)
             throw SaltpackException("Errors while calculating hash.");
     }
+
+    MessageWriter::MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipientsPublickeys,
+                                 std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys) : MessageWriter(
+            os, BYTE_ARRAY({}), recipientsPublickeys, symmetricKeys) {}
 
     MessageWriter::~MessageWriter() {
 
@@ -269,7 +276,7 @@ namespace saltpack {
     std::string MessageWriter::generateSigncryptionHeader(BYTE_ARRAY ephemeralSecretkey, BYTE_ARRAY ephemeralPublickey,
                                                           BYTE_ARRAY senderPublickey,
                                                           std::list<BYTE_ARRAY> recipientsPublickeys,
-                                                          std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricalKeys) {
+                                                          std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys) {
 
         // generate header packet
         HeaderPacket headerPacket;
@@ -286,7 +293,7 @@ namespace saltpack {
 
         // recipients list
         headerPacket.recipientsList = std::vector<HeaderPacketRecipient>();
-        headerPacket.recipientsList.reserve(recipientsPublickeys.size() + symmetricalKeys.size());
+        headerPacket.recipientsList.reserve(recipientsPublickeys.size() + symmetricKeys.size());
         int recipientIndex = 0;
 
         // process Curve25519 recipients
@@ -298,27 +305,10 @@ namespace saltpack {
             BYTE_ARRAY payloadSecretboxNonce = generateRecipientSecretboxNonce(recipientIndex);
 
             // derive shared symmetric key
-            BYTE_ARRAY sharedSymmetricKeyL(crypto_box_MACBYTES + ZEROES.size());
-            if (crypto_box_easy(sharedSymmetricKeyL.data(), ZEROES.data(), ZEROES.size(), DERIVED_SBOX_KEY.data(),
-                                publickey.data(), ephemeralSecretkey.data()) != 0)
-                throw SaltpackException("Errors while generating shared symmetric key.");
-            BYTE_ARRAY sharedSymmetricKey(&sharedSymmetricKeyL[sharedSymmetricKeyL.size() - 32],
-                                          &sharedSymmetricKeyL[sharedSymmetricKeyL.size()]);
+            BYTE_ARRAY sharedSymmetricKey = deriveSharedKey(publickey, ephemeralSecretkey);
 
             // recipient identifier
-            crypto_auth_hmacsha512_state state;
-            BYTE_ARRAY concatHash = BYTE_ARRAY(crypto_auth_hmacsha512_BYTES);
-            if (crypto_auth_hmacsha512_init(&state, SIGNCRYPTION_BOX_KEY_IDENTIFIER.data(),
-                                            SIGNCRYPTION_BOX_KEY_IDENTIFIER.size()) != 0)
-                throw SaltpackException("Errors while initialising HMAC.");
-            if (crypto_auth_hmacsha512_update(&state, sharedSymmetricKey.data(), sharedSymmetricKey.size()) != 0)
-                throw SaltpackException("Errors while updating HMAC.");
-            if (crypto_auth_hmacsha512_update(&state, payloadSecretboxNonce.data(), payloadSecretboxNonce.size()) !=
-                0)
-                throw SaltpackException("Errors while updating HMAC.");
-            if (crypto_auth_hmacsha512_final(&state, concatHash.data()) != 0)
-                throw SaltpackException("Errors while calculating HMAC.");
-            recipient.recipientPublicKey = BYTE_ARRAY(&concatHash[0], &concatHash[32]);
+            recipient.recipientPublicKey = generateRecipientIdentifier(sharedSymmetricKey, payloadSecretboxNonce);
 
             // seal payload key
             recipient.payloadKeyBox = BYTE_ARRAY(crypto_secretbox_MACBYTES + payloadKey.size());
@@ -331,7 +321,7 @@ namespace saltpack {
         }
 
         // process symmetric key recipients
-        for (auto const &keyPair : symmetricalKeys) {
+        for (auto const &keyPair : symmetricKeys) {
 
             HeaderPacketRecipient recipient;
 
@@ -339,19 +329,7 @@ namespace saltpack {
             BYTE_ARRAY payloadSecretboxNonce = generateRecipientSecretboxNonce(recipientIndex);
 
             // derive shared symmetric key
-            crypto_auth_hmacsha512_state state;
-            BYTE_ARRAY concatHash = BYTE_ARRAY(crypto_auth_hmacsha512_BYTES);
-            if (crypto_auth_hmacsha512_init(&state, SIGNCRYPTION_DERIVED_SYMMETRIC_KEY.data(),
-                                            SIGNCRYPTION_DERIVED_SYMMETRIC_KEY.size()) != 0)
-                throw SaltpackException("Errors while initialising HMAC.");
-            if (crypto_auth_hmacsha512_update(&state, ephemeralPublickey.data(), ephemeralPublickey.size()) != 0)
-                throw SaltpackException("Errors while updating HMAC.");
-            if (crypto_auth_hmacsha512_update(&state, keyPair.second.data(), keyPair.second.size()) !=
-                0)
-                throw SaltpackException("Errors while updating HMAC.");
-            if (crypto_auth_hmacsha512_final(&state, concatHash.data()) != 0)
-                throw SaltpackException("Errors while calculating HMAC.");
-            BYTE_ARRAY sharedSymmetricKey(&concatHash[0], &concatHash[32]);
+            BYTE_ARRAY sharedSymmetricKey = deriveSharedKeySymmetric(ephemeralPublickey, keyPair.second);
 
             // recipient identifier
             recipient.recipientPublicKey = keyPair.first;
@@ -544,46 +522,24 @@ namespace saltpack {
         SigncryptionPayloadPacket payloadPacket;
 
         // packet nonce
-        BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[16]);
-        BYTE_ARRAY nonce;
-        nonce.reserve(headerHashTrunc.size() + 8);
-        nonce.insert(nonce.end(), headerHashTrunc.begin(), headerHashTrunc.end());
-        nonce.push_back((BYTE) 0);
-        nonce.push_back((BYTE) 0);
-        nonce.push_back((BYTE) 0);
-        nonce.push_back((BYTE) 0);
-        nonce.push_back((BYTE) ((packetIndex >> 24) & 0xFF));
-        nonce.push_back((BYTE) ((packetIndex >> 16) & 0xFF));
-        nonce.push_back((BYTE) ((packetIndex >> 8) & 0XFF));
-        nonce.push_back((BYTE) ((packetIndex & 0XFF)));
-        if (final)
-            nonce[15] |= (BYTE) 1;
-        else
-            nonce[15] &= (BYTE) 254;
-
-        // calculate hash of the plaintext
-        BYTE_ARRAY hash = BYTE_ARRAY(crypto_hash_sha512_BYTES);
-        if (crypto_hash_sha512(hash.data(), message.data(), message.size()) != 0)
-            throw SaltpackException("Errors while calculating hash.");
+        BYTE_ARRAY nonce = generateSigncryptionPacketNonce(headerHash, packetIndex, final);
 
         // signature input
-        BYTE_ARRAY signatureInput;
-        BYTE_ARRAY flag = BYTE_ARRAY(1);
-        flag[0] = (BYTE) final;
-        signatureInput.reserve(
-                ENCRYPTED_SIGNATURE.size() + 1 + headerHash.size() + nonce.size() + flag.size() + hash.size());
-        signatureInput.insert(signatureInput.end(), ENCRYPTED_SIGNATURE.begin(), ENCRYPTED_SIGNATURE.end());
-        signatureInput.insert(signatureInput.end(), ZEROES.begin(), ZEROES.begin() + 1);
-        signatureInput.insert(signatureInput.end(), headerHash.begin(), headerHash.end());
-        signatureInput.insert(signatureInput.end(), nonce.begin(), nonce.end());
-        signatureInput.insert(signatureInput.end(), flag.begin(), flag.end());
-        signatureInput.insert(signatureInput.end(), hash.begin(), hash.end());
+        BYTE_ARRAY signatureInput = generateSignatureInput(nonce, headerHash, message, final);
+
+        // anonymous sender?
+        bool anonymousSender = std::equal(secretKey.begin(), secretKey.begin() + secretKey.size(), ZEROES_64.begin());
 
         // sign signature input
         BYTE_ARRAY signature(crypto_sign_BYTES);
-        if (crypto_sign_detached(signature.data(), NULL, signatureInput.data(), signatureInput.size(),
-                                 secretKey.data()) != 0)
-            throw SaltpackException("Errors while signing input.");
+        if (!anonymousSender) {
+
+            if (crypto_sign_detached(signature.data(), NULL, signatureInput.data(), signatureInput.size(),
+                                     secretKey.data()) != 0)
+                throw SaltpackException("Errors while signing input.");
+
+        } else
+            signature = ZEROES_64;
 
         // message to encrypt
         BYTE_ARRAY concat;
