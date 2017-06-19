@@ -311,6 +311,8 @@ TEST(encryption, final_block) {
         out.flush();
         delete enc;
 
+        throw std::bad_exception();
+
     } catch (const saltpack::SaltpackException ex) {
 
         ASSERT_STREQ(ex.what(), "Final block already added.");

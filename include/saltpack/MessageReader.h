@@ -133,7 +133,8 @@ namespace saltpack {
 
         void processSignatureHeader(std::vector<char> headerBin);
 
-        void processSigncryptionHeader(std::vector<char> headerBin, BYTE_ARRAY recipientSecretkey, std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey);
+        void processSigncryptionHeader(std::vector<char> headerBin, BYTE_ARRAY recipientSecretkey,
+                                       std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey);
 
         BYTE_ARRAY decryptPacket(std::vector<BYTE_ARRAY> authenticatorsList, BYTE_ARRAY payloadSecretbox, bool final);
 

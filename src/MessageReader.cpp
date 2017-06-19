@@ -360,13 +360,13 @@ namespace saltpack {
         if (header.mode != mode)
             throw SaltpackException("Wrong mode.");
 
-        // derive shared symmetric key
-        BYTE_ARRAY sharedSymmetricKey = deriveSharedKey(header.ephemeralPublicKey, recipientSecretkey);
-
         recipientIndex = -1;
         payloadKey = BYTE_ARRAY(32);
-
+        BYTE_ARRAY sharedSymmetricKey;
         if (recipientSecretkey.size() > 0) {
+
+            // derive shared symmetric key
+            sharedSymmetricKey = deriveSharedKey(header.ephemeralPublicKey, recipientSecretkey);
 
             // try to open the key boxes with Curve25519 key
             for (unsigned long i = 0; i < header.recipientsList.size(); i++) {
@@ -396,7 +396,7 @@ namespace saltpack {
 
                     recipientIndex = (int) i;
 
-                    // update shared symmetric key
+                    // derive shared symmetric key
                     sharedSymmetricKey = deriveSharedKeySymmetric(header.ephemeralPublicKey, symmetricKey.second);
                 }
 
@@ -612,8 +612,6 @@ namespace saltpack {
         BYTE_ARRAY signatureInput = generateSignatureInput(nonce, headerHash, message, final);
 
         if (!intentionallyAnonymous) {
-
-            std::cout << "VERIFY SIGNATURE" << std::endl;
 
             // verify the signature
             if (crypto_sign_verify_detached(detachedSignature.data(), signatureInput.data(), signatureInput.size(),
