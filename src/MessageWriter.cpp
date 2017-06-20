@@ -38,7 +38,7 @@ namespace saltpack {
             throw SaltpackException("Unable to initialise libsodium.");
 
         if (senderSecretkey.size() != 0 && senderSecretkey.size() != crypto_box_SECRETKEYBYTES)
-            throw saltpack::SaltpackException("Wrong size for senderSecretKey");
+            throw saltpack::SaltpackException("Wrong size for senderSecretKey.");
 
         mode = MODE_ENCRYPTION;
         packetIndex = 0;
@@ -104,7 +104,7 @@ namespace saltpack {
             throw SaltpackException("Unable to initialise libsodium.");
 
         if (senderSecretkey.size() != crypto_sign_SECRETKEYBYTES)
-            throw saltpack::SaltpackException("Wrong size for senderSecretkey");
+            throw saltpack::SaltpackException("Wrong size for senderSecretkey.");
 
         mode = detatchedSignature ? MODE_DETACHED_SIGNATURE : MODE_ATTACHED_SIGNATURE;
         packetIndex = 0;
@@ -144,7 +144,10 @@ namespace saltpack {
             throw SaltpackException("Unable to initialise libsodium.");
 
         if (senderSecretkey.size() != crypto_sign_SECRETKEYBYTES && senderSecretkey.size() != 0)
-            throw saltpack::SaltpackException("Wrong size for senderSecretkey");
+            throw saltpack::SaltpackException("Wrong size for senderSecretkey.");
+
+        if (senderSecretkey.size() == 0 && symmetricKeys.size() == 0)
+            throw saltpack::SaltpackException("Please provide at least one key.");
 
         mode = MODE_SIGNCRYPTION;
         packetIndex = 0;

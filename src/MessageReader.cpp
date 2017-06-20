@@ -38,7 +38,7 @@ namespace saltpack {
             throw SaltpackException("Unable to initialise libsodium.");
 
         if (recipientSecretkey.size() != crypto_box_SECRETKEYBYTES)
-            throw saltpack::SaltpackException("Wrong size for recipientSecretkey");
+            throw saltpack::SaltpackException("Wrong size for recipientSecretkey.");
 
         std::vector<char> headerBin;
         while (!input.eof()) {
@@ -169,10 +169,10 @@ namespace saltpack {
             throw SaltpackException("Unable to initialise libsodium.");
 
         if (recipientSecretkey.size() != 0 && recipientSecretkey.size() != crypto_box_SECRETKEYBYTES)
-            throw saltpack::SaltpackException("Wrong size for recipientSecretkey");
+            throw saltpack::SaltpackException("Wrong size for recipientSecretkey.");
 
         if (symmetricKey.first.size() > 0 && symmetricKey.second.size() != crypto_secretbox_KEYBYTES)
-            throw saltpack::SaltpackException("Wrong size for symmetricKey");
+            throw saltpack::SaltpackException("Wrong size for symmetricKey.");
 
         std::vector<char> headerBin;
         while (!input.eof()) {

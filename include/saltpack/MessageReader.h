@@ -28,7 +28,7 @@ namespace saltpack {
     /**
      *  @brief The class used to decrypt or verify a message.
      *
-     *  Use it in conjuction with ArmoredInputStream to process armored BaseX input.
+     *  Use it in conjunction with ArmoredInputStream to process armored BaseX input.
      */
     class MessageReader : public Base {
 
@@ -37,7 +37,7 @@ namespace saltpack {
          * Creates a new MessageReader instance to decrypt a message.
          *
          * @param is the source input stream containing the encrypted message.
-         * @param recipientSecretkey the private key of the sender.
+         * @param recipientSecretkey the private key of the recipient.
          *
          * @throws SaltpackException
          */
@@ -62,7 +62,18 @@ namespace saltpack {
          */
         MessageReader(std::istream &is, std::istream &messageStream);
 
-        // TODO: add docs
+        /**
+         * Creates a new MessageReader instance to decrypt and verify a signcrypted message.
+         *
+         * @param is the source input stream containing the message.
+         * @param recipientSecretkey the Curve25519 private key of the recipient.
+         *        The array can be empty.
+         * @param symmetricKey the symmetric key of the recipient: the first array is treated as the
+         *        identifier, the second as the key itself.
+         *        The arrays can be empty.
+         *
+         * @throws SaltpackException
+         */
         MessageReader(std::istream &is, BYTE_ARRAY recipientSecretkey, std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey);
 
         /**
@@ -89,7 +100,8 @@ namespace saltpack {
         bool hasMoreBlocks();
 
         /**
-         * Returns the public keys of the recipients if they're visible (see flag `visibleRecipients` in MessageWriter).
+         * Returns the public keys / identifiers of the recipients if they're visible
+         * (see flag `visibleRecipients` in MessageWriter).
          *
          * @throws SaltpackException
          *
