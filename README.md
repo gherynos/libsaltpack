@@ -5,7 +5,7 @@ A C++ implementation of [saltpack](https://saltpack.org).
 Dependencies
 ------------
 
-* [libsodium](https://download.libsodium.org/doc/) >= 1.0.3
+* [libsodium](https://download.libsodium.org/doc/) >= 1.0.9
 * [msgpack](https://github.com/msgpack/msgpack-c) >= 2.0.0
 * [GMP](https://gmplib.org/) >= 6.0.0 (or [MPIR](http://mpir.org/) >= 2.6.0 on Windows)
 
@@ -223,7 +223,8 @@ int main(void) {
         // signcrypt message
         std::stringstream out;
         saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_ENCRYPTION);
-        saltpack::MessageWriter *sig = new saltpack::MessageWriter(aOut, signer_secretkey, recipients, symmetricKeys);
+        saltpack::MessageWriter *sig = new saltpack::MessageWriter(
+            aOut, signer_secretkey, recipients, symmetricKeys);
         sig->addBlock({'a', ' ', 's', 'e', 'c', 'r', 'e', 't', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, true);
         aOut.finalise();
         
@@ -279,7 +280,7 @@ int main(void) {
 
         // symmetric keys (empty)
         std::list<std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>> symmetricKeys;
-        std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY> key = std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>(
+        std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY> key(
             saltpack::Utils::generateRandomBytes(32),
             saltpack::Utils::generateRandomBytes(crypto_secretbox_KEYBYTES));
         symmetricKeys.push_back(key);
@@ -287,7 +288,8 @@ int main(void) {
         // signcrypt message
         std::stringstream out;
         saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_ENCRYPTION);
-        saltpack::MessageWriter *sig = new saltpack::MessageWriter(aOut, signer_secretkey, recipients, symmetricKeys);
+        saltpack::MessageWriter *sig = new saltpack::MessageWriter(
+            aOut, signer_secretkey, recipients, symmetricKeys);
         sig->addBlock({'A', ' ', 's', '3', 'c', 'r', 'e', '7'}, false);
         sig->addBlock({' ', 'm', 'e', 's', 's', '@', 'g', 'e'}, true);
         aOut.finalise();

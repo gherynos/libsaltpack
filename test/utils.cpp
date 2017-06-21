@@ -83,13 +83,13 @@ TEST(utils, derive_key) {
                                                                       crypto_pwhash_OPSLIMIT_MODERATE,
                                                                       crypto_pwhash_MEMLIMIT_MODERATE);
 
-    ASSERT_EQ(key.size(), 64);
+    ASSERT_EQ(key.size(), (unsigned int) 64);
 
     saltpack::BYTE_ARRAY key2 = saltpack::Utils::deriveKeyFromPassword(64, "Simple password2", salt,
                                                                        crypto_pwhash_OPSLIMIT_MODERATE,
                                                                        crypto_pwhash_MEMLIMIT_MODERATE);
 
-    ASSERT_EQ(key2.size(), 64);
+    ASSERT_EQ(key2.size(), (unsigned int) 64);
     ASSERT_NE(key, key2);
 
     salt = saltpack::Utils::generateRandomBytes(crypto_pwhash_SALTBYTES);
@@ -97,6 +97,6 @@ TEST(utils, derive_key) {
                                                                        crypto_pwhash_OPSLIMIT_MODERATE,
                                                                        crypto_pwhash_MEMLIMIT_MODERATE);
 
-    ASSERT_EQ(key3.size(), 64);
+    ASSERT_EQ(key3.size(), (unsigned int) 64);
     ASSERT_NE(key, key3);
 }
