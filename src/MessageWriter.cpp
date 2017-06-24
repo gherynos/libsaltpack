@@ -146,7 +146,7 @@ namespace saltpack {
         if (senderSecretkey.size() != crypto_sign_SECRETKEYBYTES && senderSecretkey.size() != 0)
             throw saltpack::SaltpackException("Wrong size for senderSecretkey.");
 
-        if (senderSecretkey.size() == 0 && symmetricKeys.size() == 0)
+        if (recipientsPublickeys.size() == 0 && symmetricKeys.size() == 0)
             throw saltpack::SaltpackException("Please provide at least one key.");
 
         mode = MODE_SIGNCRYPTION;

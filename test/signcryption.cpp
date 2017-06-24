@@ -305,6 +305,55 @@ TEST(signcryption, intentionally_anonymous) {
     ASSERT_EQ(msg2.str(), "A m3sS@g{?}");
 }
 
+TEST(signcryption, intentionally_anonymous_2) {
+
+    saltpack::BYTE_ARRAY receiver_publickey(crypto_box_PUBLICKEYBYTES);
+    saltpack::BYTE_ARRAY receiver_secretkey(crypto_box_SECRETKEYBYTES);
+    saltpack::Utils::generateKeypair(receiver_publickey, receiver_secretkey);
+
+    saltpack::BYTE_ARRAY test_publickey(crypto_box_PUBLICKEYBYTES);
+    saltpack::BYTE_ARRAY test_secretkey(crypto_box_SECRETKEYBYTES);
+    saltpack::Utils::generateKeypair(test_publickey, test_secretkey);
+
+    // recipients
+    std::list<saltpack::BYTE_ARRAY> recipients;
+    recipients.push_back(receiver_publickey);
+    recipients.push_back(test_publickey);
+
+    // keys
+    std::list<std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>> symmetricKeys;
+
+    // signcrypt message
+    std::stringstream out;
+    saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, recipients, symmetricKeys);
+    sig->addBlock({'A', ' '}, false);
+    sig->addBlock({'m', '3', 's', 'S'}, false);
+    sig->addBlock({'@', 'g', '{', '?', '}'}, true);
+
+    out.flush();
+    delete sig;
+
+    // verify message with first key
+    std::stringstream in(out.str());
+    std::stringstream msg;
+    saltpack::MessageReader *dec = new saltpack::MessageReader(in, test_secretkey,
+                                                               std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>{});
+    while (dec->hasMoreBlocks()) {
+
+        saltpack::BYTE_ARRAY message = dec->getBlock();
+        msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+    }
+
+    saltpack::BYTE_ARRAY ZEROES = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                   0, 0, 0, 0};
+
+    ASSERT_EQ(dec->getSender(), ZEROES);
+    ASSERT_TRUE(dec->isIntentionallyAnonymous());
+    delete dec;
+
+    ASSERT_EQ(msg.str(), "A m3sS@g{?}");
+}
+
 TEST(signcryption, final_block) {
 
     saltpack::BYTE_ARRAY signer_secretkey(
