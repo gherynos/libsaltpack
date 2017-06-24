@@ -449,3 +449,72 @@ TEST(signcryption, truncated) {
         ASSERT_STREQ(ex.what(), "Not enough data found to decode block (message truncated?).");
     }
 }
+
+TEST(signcryption, similar_keys) {
+
+    saltpack::BYTE_ARRAY receiver_publickey(crypto_box_PUBLICKEYBYTES);
+    saltpack::BYTE_ARRAY receiver_secretkey(crypto_box_SECRETKEYBYTES);
+    saltpack::Utils::generateKeypair(receiver_publickey, receiver_secretkey);
+
+    saltpack::BYTE_ARRAY test_publickey(crypto_box_PUBLICKEYBYTES);
+    saltpack::BYTE_ARRAY test_secretkey(crypto_box_SECRETKEYBYTES);
+    saltpack::Utils::generateKeypair(test_publickey, test_secretkey);
+
+    // recipients
+    std::list<saltpack::BYTE_ARRAY> recipients;
+    recipients.push_back(receiver_publickey);
+
+    // keys
+    std::list<std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>> symmetricKeys;
+    std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY> key1 = std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>(
+            {'i', 'd', '1'}, saltpack::Utils::generateRandomBytes(crypto_secretbox_KEYBYTES));
+    symmetricKeys.push_back(key1);
+    std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY> key2 = std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>(
+            {'i', 'd'}, saltpack::Utils::generateRandomBytes(crypto_secretbox_KEYBYTES));
+    symmetricKeys.push_back(key2);
+
+    // signcrypt message
+    std::stringstream out;
+    saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, recipients, symmetricKeys);
+    sig->addBlock({'A', ' '}, false);
+    sig->addBlock({'m', '3', 's', 'S'}, false);
+    sig->addBlock({'@', 'g', '{', '!', '}'}, true);
+
+    out.flush();
+    delete sig;
+
+    // verify message with first key
+    std::stringstream in(out.str());
+    std::stringstream msg;
+    saltpack::MessageReader *dec = new saltpack::MessageReader(in, test_secretkey, key2);
+    while (dec->hasMoreBlocks()) {
+
+        saltpack::BYTE_ARRAY message = dec->getBlock();
+        msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+    }
+
+    saltpack::BYTE_ARRAY ZEROES = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                   0, 0, 0, 0};
+
+    ASSERT_EQ(dec->getSender(), ZEROES);
+    ASSERT_TRUE(dec->isIntentionallyAnonymous());
+    delete dec;
+
+    ASSERT_EQ(msg.str(), "A m3sS@g{!}");
+
+    // verify message with second key
+    std::stringstream in2(out.str());
+    std::stringstream msg2;
+    saltpack::MessageReader *dec2 = new saltpack::MessageReader(in2, test_secretkey, key1);
+    while (dec2->hasMoreBlocks()) {
+
+        saltpack::BYTE_ARRAY message = dec2->getBlock();
+        msg2.write(reinterpret_cast<const char *>(message.data()), message.size());
+    }
+
+    ASSERT_EQ(dec2->getSender(), ZEROES);
+    ASSERT_TRUE(dec2->isIntentionallyAnonymous());
+    delete dec2;
+
+    ASSERT_EQ(msg2.str(), "A m3sS@g{!}");
+}

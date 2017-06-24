@@ -531,7 +531,7 @@ namespace saltpack {
         BYTE_ARRAY signatureInput = generateSignatureInput(nonce, headerHash, message, final);
 
         // anonymous sender?
-        bool anonymousSender = std::equal(secretKey.begin(), secretKey.begin() + secretKey.size(), ZEROES_64.begin());
+        bool anonymousSender = secretKey.size() == 0;
 
         // sign signature input
         BYTE_ARRAY signature(crypto_sign_BYTES);

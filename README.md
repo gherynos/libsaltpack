@@ -278,7 +278,7 @@ int main(void) {
         // asymmetric keys (empty)
         std::list<saltpack::BYTE_ARRAY> recipients;
 
-        // symmetric keys (empty)
+        // symmetric keys
         std::list<std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>> symmetricKeys;
         std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY> key(
             saltpack::Utils::generateRandomBytes(32),

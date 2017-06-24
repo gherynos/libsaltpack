@@ -376,8 +376,7 @@ namespace saltpack {
 
                 // compute and verify identifier
                 BYTE_ARRAY identifier = generateRecipientIdentifier(sharedSymmetricKey, payloadSecretboxNonce);
-                if (std::equal(identifier.begin(), identifier.begin() + identifier.size(),
-                               header.recipientsList[i].recipientPublicKey.begin())) {
+                if (identifier == header.recipientsList[i].recipientPublicKey) {
 
                     recipientIndex = (int) i;
                 }
@@ -391,8 +390,7 @@ namespace saltpack {
             // look for symmetric key identifier
             for (unsigned long i = 0; i < header.recipientsList.size(); i++) {
 
-                if (std::equal(symmetricKey.first.begin(), symmetricKey.first.begin() + symmetricKey.first.size(),
-                               header.recipientsList[i].recipientPublicKey.begin())) {
+                if (symmetricKey.first == header.recipientsList[i].recipientPublicKey) {
 
                     recipientIndex = (int) i;
 
@@ -424,8 +422,7 @@ namespace saltpack {
                 throw SaltpackException("Errors while getting sender public key.");
 
             // intentionally anonymous message?
-            intentionallyAnonymous = std::equal(senderPublickey.begin(),
-                                                senderPublickey.begin() + senderPublickey.size(), ZEROES.begin());
+            intentionallyAnonymous = senderPublickey == ZEROES;
 
         } else
             throw SaltpackException("Failed to find matching recipient.");
