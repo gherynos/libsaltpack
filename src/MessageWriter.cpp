@@ -149,6 +149,14 @@ namespace saltpack {
         if (recipientsPublickeys.size() == 0 && symmetricKeys.size() == 0)
             throw saltpack::SaltpackException("Please provide at least one key.");
 
+        for (BYTE_ARRAY key: recipientsPublickeys)
+            if (key.size() != crypto_box_SECRETKEYBYTES)
+                throw saltpack::SaltpackException("Wrong size for recipientPublickey.");
+
+        for (std::pair<BYTE_ARRAY, BYTE_ARRAY> key: symmetricKeys)
+            if (key.second.size() != crypto_secretbox_KEYBYTES)
+                throw saltpack::SaltpackException("Wrong size for symmetricKey.");
+
         mode = MODE_SIGNCRYPTION;
         packetIndex = 0;
         lastBlockAdded = false;
