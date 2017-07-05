@@ -14,10 +14,14 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      compiler: gcc
+      env:
+        - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
 
     - os: osx
       compiler: clang
+
+before_install:
+  - if [ $TRAVIS_OS_NAME = linux ]; then eval "${MATRIX_EVAL}"; fi
 
 install:
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get update && sudo apt-get -y install libgmp-dev; fi
