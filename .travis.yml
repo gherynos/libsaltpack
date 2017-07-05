@@ -1,5 +1,4 @@
 language: cpp
-sudo: required
 
 branches:
   only:
@@ -8,6 +7,8 @@ branches:
 matrix:
   include:
     - os: linux
+      dist: trusty
+      sudo: required
       addons:
         apt:
           sources:
@@ -18,6 +19,7 @@ matrix:
         - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
 
     - os: osx
+      osx_image: xcode7.2
       compiler: clang
 
 before_install:
