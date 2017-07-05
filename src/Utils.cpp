@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <cstddef>
 #include <gmpxx.h>
 #include <math.h>
 #include <sodium.h>
