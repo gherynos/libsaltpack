@@ -1,0 +1,31 @@
+language: cpp
+sudo: required
+
+branches:
+  only:
+    - master
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+    - os: osx
+      compiler: clang
+
+install:
+  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -y install libgmp-dev; fi
+
+  - if [ $TRAVIS_OS_NAME = linux ]; then wget https://github.com/msgpack/msgpack-c/releases/download/cpp-2.0.0/msgpack-2.0.0.tar.gz; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then tar -xvzf msgpack-2.0.0.tar.gz; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then pushd msgpack-2.0.0 && cmake . && make && sudo make install && popd; fi
+
+  - if [ $TRAVIS_OS_NAME = linux ]; then wget https://github.com/jedisct1/libsodium/releases/download/1.0.9/libsodium-1.0.9.tar.gz; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then tar -xvzf libsodium-1.0.9.tar.gz; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then pushd libsodium-1.0.9 && ./configure && make && sudo make install && popd; fi
+
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew update && brew install libsodium && brew install msgpack && brew install gmp; fi
+
+script:
+ - mkdir build
+ - cd build
+ - cmake .. && make && make test
