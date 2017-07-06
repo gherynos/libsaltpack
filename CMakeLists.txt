@@ -5,7 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC -Wall")
 if(MSVC)
     #vc 2012 fix for vararg templates
     set(MSVC_COMPILER_DEFS "-D_VARIADIC_MAX=10")
-endif() 
+endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
 
@@ -46,6 +46,14 @@ endif()
 
 target_link_libraries(saltpack-test saltpack)
 add_test(saltpack-test saltpack-test)
+
+# Code coverage
+if (ENABLE_COVERAGE)
+    include(CodeCoverage)
+    setup_target_for_coverage(saltpack-coverage saltpack-test coverage)
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
+endif()
 
 # LibSodium
 find_package(Libsodium REQUIRED)

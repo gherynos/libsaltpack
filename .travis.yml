@@ -40,8 +40,12 @@ install:
   - if [ $TRAVIS_OS_NAME = osx ]; then if ! brew ls --version libsodium &>/dev/null; then brew install libsodium; fi; fi
   - if [ $TRAVIS_OS_NAME = osx ]; then if ! brew ls --version msgpack &>/dev/null; then brew install msgpack; fi; fi
   - if [ $TRAVIS_OS_NAME = osx ]; then if ! brew ls --version gmp &>/dev/null; then brew install gmp; fi; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then if ! brew ls --version lcov &>/dev/null; then brew install lcov; fi; fi
+
+  - gem install coveralls-lcov
 
 script:
  - mkdir build
  - cd build
- - cmake .. && make && make test
+ - cmake .. -DENABLE_COVERAGE=true && make && make saltpack-coverage
+ - coveralls-lcov coverage.info.cleaned
