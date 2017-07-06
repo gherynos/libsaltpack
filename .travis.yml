@@ -26,7 +26,7 @@ before_install:
   - if [ $TRAVIS_OS_NAME = linux ]; then eval "${MATRIX_EVAL}"; fi
 
 install:
-  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get update && sudo apt-get -y install libgmp-dev; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get update && sudo apt-get -y install libgmp-dev lcov; fi
 
   - if [ $TRAVIS_OS_NAME = linux ]; then wget https://github.com/msgpack/msgpack-c/releases/download/cpp-2.0.0/msgpack-2.0.0.tar.gz; fi
   - if [ $TRAVIS_OS_NAME = linux ]; then tar -xvzf msgpack-2.0.0.tar.gz; fi
@@ -47,5 +47,5 @@ install:
 script:
  - mkdir build
  - cd build
- - cmake .. -DENABLE_COVERAGE=true && make && make saltpack-coverage
+ - cmake .. -DENABLE_COVERAGE=true -DCMAKE_BUILD_TYPE=Debug && make && make saltpack-coverage
  - coveralls-lcov coverage.info.cleaned
