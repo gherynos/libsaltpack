@@ -356,3 +356,58 @@ TEST(signature, detached_version_one) {
     ASSERT_EQ(signer_publickey, dec->getSender());
     delete dec;
 }
+
+TEST(signature, wrong_header) {
+
+    try {
+
+        // verify message
+        std::stringstream in("BEGIN SALTPACK SIGNED MESSAGE. kYPeSRSsbelrDDS puce7dUaqmeNj74 dudF0cQhi8f5zqD"
+                                     "TdbvwEAJ98zxhit 04w34Iv1liNYs67 wHXjcxNHVRAChg9 sz9RyKmkpOsft1I rUJn4svj0EBluyn"
+                                     "8sUrmZteq9ur4eP 2w4FWPhnUlGDPRa vQ1lRGcpe8kfrKC 4gy89DEbuCrN3ug N20y46csYA7IcI5"
+                                     "BznE8thvZegYiaN tG7DLQB3PFpGpYU 0qCgw4FTwgdpENk lIBr34RK9c2StIL D9QmaogMLiJVvBf"
+                                     "6ZrtrkCi1lrZlv6 vijaUrzvwg9l3Uq jVLES3FAdlDQTHi 4jGpBVB9p."
+                                     "END SALTPACK SIGNED MESSAGE.");
+        saltpack::ArmoredInputStream is(in);
+        std::stringstream msg;
+        saltpack::MessageReader *dec = new saltpack::MessageReader(is);
+        while (dec->hasMoreBlocks()) {
+
+            saltpack::BYTE_ARRAY message = dec->getBlock();
+            msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+        }
+        delete dec;
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Unrecognized format name: saltpack2.");
+    }
+
+    try {
+
+        // verify message
+        std::stringstream in("BEGIN SALTPACK SIGNED MESSAGE. kYM5h1pg6qz9UMn j6G7KhCz9zkd5Tz u5OgqYJueDSpXLI"
+                                     "ucyRdJ1NfF3dHu4 a4FjzV1vVbNbDiD n0gtP4YGtOlCSzX jZMfExyAIUy6D9R mDvqGVstV8qodbe"
+                                     "nAczTxPJFQfm8PV 6CcJI5yJjlAdeFz 6KRtRFdYKkEZFJp DNzqfKNSH7WTySc oSo2YtxcgU5KfXp"
+                                     "j0LylUlUCgeoGg1 3BAXGO2f83g0x2O DocHYVsVtMMPdo9 2iWo1XNXZzxsSix pnn3lfabU5vIRKa"
+                                     "WW6PGDPGBiS5IQG k7dKqjOx9aElgTv l7a64SRMUW9MpRz eXKf1lDx."
+                                     "END SALTPACK SIGNED MESSAGE.");
+        saltpack::ArmoredInputStream is(in);
+        std::stringstream msg;
+        saltpack::MessageReader *dec = new saltpack::MessageReader(is);
+        while (dec->hasMoreBlocks()) {
+
+            saltpack::BYTE_ARRAY message = dec->getBlock();
+            msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+        }
+        delete dec;
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Incompatible version: 1.1.");
+    }
+}

@@ -100,3 +100,68 @@ TEST(utils, derive_key) {
     ASSERT_EQ(key3.size(), (unsigned int) 64);
     ASSERT_NE(key, key3);
 }
+
+TEST(utils, exceptions) {
+
+    saltpack::BYTE_ARRAY publickey = saltpack::BYTE_ARRAY(12);
+    saltpack::BYTE_ARRAY secretkey = saltpack::BYTE_ARRAY(crypto_box_SECRETKEYBYTES);
+
+    try {
+
+        saltpack::Utils::generateKeypair(publickey, secretkey);
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong publickey size.");
+    }
+
+    publickey = saltpack::BYTE_ARRAY(crypto_box_PUBLICKEYBYTES);
+    secretkey = saltpack::BYTE_ARRAY(12);
+
+    try {
+
+        saltpack::Utils::generateKeypair(publickey, secretkey);
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong secretkey size.");
+    }
+
+    publickey = saltpack::BYTE_ARRAY(12);
+    secretkey = saltpack::BYTE_ARRAY(crypto_sign_SECRETKEYBYTES);
+
+    try {
+
+        saltpack::Utils::generateSignKeypair(publickey, secretkey);
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong publickey size.");
+    }
+
+    publickey = saltpack::BYTE_ARRAY(crypto_sign_PUBLICKEYBYTES);
+    secretkey = saltpack::BYTE_ARRAY(12);
+
+    try {
+
+        saltpack::Utils::generateSignKeypair(publickey, secretkey);
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong secretkey size.");
+    }
+
+    try {
+
+        saltpack::Utils::derivePublickey(secretkey);
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong secretkey size.");
+    }
+}

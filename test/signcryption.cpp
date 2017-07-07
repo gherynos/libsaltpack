@@ -567,3 +567,165 @@ TEST(signcryption, similar_keys) {
 
     ASSERT_EQ(msg2.str(), "A m3sS@g{!}");
 }
+
+TEST(signcryption, wrong_keys) {
+
+    try {
+
+        // decrypt message
+        std::stringstream in("sample");
+        std::stringstream msg;
+        saltpack::MessageReader *dec = new saltpack::MessageReader(in, saltpack::BYTE_ARRAY(2),
+                                                                   std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>{});
+        while (dec->hasMoreBlocks()) {
+
+            saltpack::BYTE_ARRAY message = dec->getBlock();
+            msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+        }
+        delete dec;
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong size for recipientSecretkey.");
+    }
+
+    try {
+
+        // decrypt message
+        std::stringstream in("sample");
+        std::stringstream msg;
+        saltpack::MessageReader *dec = new saltpack::MessageReader(in, saltpack::BYTE_ARRAY(crypto_box_SECRETKEYBYTES),
+                                                                   std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>{{'a'},
+                                                                                                                         {'b'}});
+        while (dec->hasMoreBlocks()) {
+
+            saltpack::BYTE_ARRAY message = dec->getBlock();
+            msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+        }
+        delete dec;
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong size for symmetricKey.");
+    }
+}
+
+TEST(signcryption, no_recipient) {
+
+    saltpack::BYTE_ARRAY receiver_publickey(crypto_box_PUBLICKEYBYTES);
+    saltpack::BYTE_ARRAY receiver_secretkey(crypto_box_SECRETKEYBYTES);
+    saltpack::Utils::generateKeypair(receiver_publickey, receiver_secretkey);
+
+    saltpack::BYTE_ARRAY test_publickey(crypto_box_PUBLICKEYBYTES);
+    saltpack::BYTE_ARRAY test_secretkey(crypto_box_SECRETKEYBYTES);
+    saltpack::Utils::generateKeypair(test_publickey, test_secretkey);
+
+    // recipients
+    std::list<saltpack::BYTE_ARRAY> recipients;
+    recipients.push_back(receiver_publickey);
+
+    // keys
+    std::list<std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>> symmetricKeys;
+
+    // signcrypt message
+    std::stringstream out;
+    saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, recipients, symmetricKeys);
+    sig->addBlock({'A', ' '}, false);
+    sig->addBlock({'m', '3', 's', 'S'}, false);
+    sig->addBlock({'@', 'g', '{', '?', '}'}, true);
+
+    out.flush();
+    delete sig;
+
+    try {
+
+        // verify message
+        std::stringstream in(out.str());
+        std::stringstream msg;
+        saltpack::MessageReader *dec = new saltpack::MessageReader(in, test_secretkey,
+                                                                   std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>{});
+        while (dec->hasMoreBlocks()) {
+
+            saltpack::BYTE_ARRAY message = dec->getBlock();
+            msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+        }
+        delete dec;
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Failed to find matching recipient.");
+    }
+}
+
+TEST(signcryption, wrong_header) {
+
+    try {
+
+        // verify message
+        std::stringstream in("BEGIN SALTPACK ENCRYPTED MESSAGE. kiNKSFgXTKGnAwu ubhuHbwuAbB7UXp IA3AoaGCTCz3C8p"
+                                     "JdDyX45hzvnIodw 4DKm7lW8ygQPjuJ 0TSzpeQBOLfw5jC Hd9zOTmHSB9kyVp xvs4e6UhaDBq4I7"
+                                     "JhnX1NwkwyIRYCY 7pshlimLhmXp6jL 0tY5MZmikj6p6IU icOOJIEGEzgTDhP OePocXKtgcIBKGp"
+                                     "kdyF90Ojhbk39hq 00fcRIOScK3imSG zE4OSLkDxATnm6F IwKFI5zMC2Wvgy8 JpIgngS6NuFXmLs"
+                                     "sZicg10pOPbSPf7 OTEFciDKMuvYrAs mBTcxRNQybr19It xR0bavw2lefnQT2 3JozU2BJD4hBnFD"
+                                     "ny4rPib8esNiQY4 P86uMD9uohOaF3G GCrP3Xvv8mwY08H frzTCasplZMztJq cbeK0wyMDLk6SCR"
+                                     "VkSJmaLP40r0Mav iqN2HLsgOZOxjth ldbEIXy83K08W4W 5asUIC2QM1qoeTz ARBgibCoupVc5WO"
+                                     "RpgXaIeYeGEMlye 17gbsibSUKJg0GU Smdg1vWuMKudD3t J0JCMPbC08t7xXt bp46RzeSV8DPO5l"
+                                     "MoHN3nI7I8y73Hi JKLSxVR6XcqjJm8 5ikYVGrzZzXfJ1q olPuZt4nHHHCSoL 0pDfEP1wRo7tE0X"
+                                     "fzsOLUrAbTx2gSD Yr9hnaqpEGdFyGV zYxDhMpcFUIuI27 PuYhAzp5p4h92Q3 o31B2D26rYVAoRw"
+                                     "R. END SALTPACK ENCRYPTED MESSAGE.");
+        saltpack::ArmoredInputStream is(in);
+        std::stringstream msg;
+        saltpack::MessageReader *dec = new saltpack::MessageReader(is, saltpack::BYTE_ARRAY(crypto_box_SECRETKEYBYTES),
+                                                                   std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>{});
+        while (dec->hasMoreBlocks()) {
+
+            saltpack::BYTE_ARRAY message = dec->getBlock();
+            msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+        }
+        delete dec;
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Unrecognized format name: saltpack2.");
+    }
+
+    try {
+
+        // verify message
+        std::stringstream in("BEGIN SALTPACK ENCRYPTED MESSAGE. kiNJamlTJ29ZvW4 RHAOfdeyVaRv3yc kghH0jttS29IslZ"
+                                     "Y1j8j3XSp7BTqcB lLbgT3nTnUW7mVv CVkaCAOqIzlUiYt IM633gR1BUAodmb huvQUfDWtA2V6cC"
+                                     "ukKjhRHvveSBdsg QDdk7z9QgDgbr0c CkDEUrTXxU0CPjh DIPiFFuXGFCePny ozpIEi3UBF5REic"
+                                     "6Sd72lPE5fTuoqF Rl8tHD5LRpbUGn1 82RPHIGLXClGzLu 4CQ9OM2M3R8V3Cg gsP9ecc7srILFRp"
+                                     "3GWuSYyq6DjYdiE tUEd52XZiEw2UGl U9mhRZUzJpJedkW c6rNtNBWzmq4N7s ArM7T63rmEJwIZ4"
+                                     "0riYVktIcNfqSos suNGRW0JxgCru9T R2EwEjesEVPVbrM sxmuvnKc1ca0NxA 8rgx2VmE4bVVl3A"
+                                     "vGy5IvW5Xfh9sPK pnguihfXWxRXqpa ViRez5SqTULcg5c YqvGPHPeIukd9np wzjr7I0qYVi25Rj"
+                                     "dO1pVKF9wEXvTyi izrSWRYsPXvcvsM K7zpXqp043u3D4E Uv9SiRf4flAsr1Q d9KJsMS12g8GQBt"
+                                     "cUU4Z3iwLgvXp9d BzgKkWKy2GdN82m RgKFhOBm1brKjs9 7t0XckYS079nlAe eMfuQeSfO7Q85rM"
+                                     "xI0b1dLSvqjy0Rt 9LrYazVrjUNZ4wP lCcRzPraYAyO2S4 rQDrJZwrrN0Jwre D4pbndtAfIafHX."
+                                     "END SALTPACK ENCRYPTED MESSAGE.");
+        saltpack::ArmoredInputStream is(in);
+        std::stringstream msg;
+        saltpack::MessageReader *dec = new saltpack::MessageReader(is, saltpack::BYTE_ARRAY(crypto_box_SECRETKEYBYTES),
+                                                                   std::pair<saltpack::BYTE_ARRAY, saltpack::BYTE_ARRAY>{});
+        while (dec->hasMoreBlocks()) {
+
+            saltpack::BYTE_ARRAY message = dec->getBlock();
+            msg.write(reinterpret_cast<const char *>(message.data()), message.size());
+        }
+        delete dec;
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Incompatible version: 1.1.");
+    }
+}
