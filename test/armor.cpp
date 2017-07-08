@@ -265,3 +265,48 @@ TEST(armor, wrong_app_name) {
         ASSERT_STREQ(ex.what(), "Wrong application name.");
     }
 }
+
+TEST(armor, wrong_header_footer) {
+
+    try {
+
+        std::string message = "BEGIN SOLTPACK ENCRYPTED MESSAGE. 0c83np9BDvp5DXP 26S70I. END SALTPACK ENCRYPTED MESSAGE.";
+
+        std::stringstream input(message);
+        saltpack::ArmoredInputStream aIn(input);
+
+        throw std::bad_exception();
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong header.");
+    }
+
+    std::string message = "BEGIN SALTPACK ENCRYPTED MESSAGE. 0c83np9BDvp5DXP 26S70I. END SALTPACK ENCRYPTOD MESSAGE.";
+
+    std::stringstream input(message);
+    saltpack::ArmoredInputStream aIn(input);
+
+    char buffer[12];
+    std::stringstream coll;
+    while (!aIn.eof()) {
+
+        aIn.read(buffer, 12);
+        coll.write(buffer, aIn.gcount());
+    }
+
+    ASSERT_EQ(coll.str().size(), 0);
+}
+
+TEST(armor, wrong_mode) {
+
+    try {
+
+        std::stringstream step;
+        saltpack::ArmoredOutputStream aOut(step, saltpack::MODE_SIGNCRYPTION);
+
+    } catch (const saltpack::SaltpackException ex) {
+
+        ASSERT_STREQ(ex.what(), "Wrong mode.");
+    }
+}

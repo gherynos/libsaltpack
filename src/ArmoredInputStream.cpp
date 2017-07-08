@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2017 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,9 +56,6 @@ namespace saltpack {
         while (!input.eof()) {
 
             input.read(c, 1);
-            if (input.gcount() == 0)
-                continue;
-
             if (c[0] == '.')
                 break;
             header.write(c, 1);
@@ -88,95 +85,87 @@ namespace saltpack {
         if (!dataReady && footerReached)
             return std::istream::traits_type::eof();
 
-        try {
+        // refill internal buffer with BaseX-decoded data
+        std::stringstream footer;
+        while (!dataReady && !input.eof()) {
 
-            // refill internal buffer with BaseX-decoded data
-            std::stringstream footer;
-            while (!dataReady && !input.eof()) {
+            char c[1];
+            while (!input.eof()) {
 
-                char c[1];
-                while (!input.eof()) {
-
-                    // check buffer full
-                    if (buffer.tellp() == BUFFER_SIZE)
-                        break;
-
-                    // read char
-                    input.read(c, 1);
-                    if (input.gcount() == 0)
-                        continue;
-
-                    // check char
-                    if (footerReached) {
-
-                        if (c[0] == '.')
-                            break;
-                        else
-                            footer << c[0];
-
-                    } else if (c[0] == '.') {
-
-                        footerReached = true;
-
-                    } else if (c[0] != ' ' && c[0] != '>' && c[0] != '\n' && c[0] != '\r' && c[0] != '\t')
-                        buffer << c[0];
-                }
-
-                if (buffer.tellp() == ZERO && footerVerified)
+                // check buffer full
+                if (buffer.tellp() == BUFFER_SIZE)
                     break;
 
+                // read char
+                input.read(c, 1);
+                if (input.gcount() == 0)
+                    continue;
+
+                // check char
                 if (footerReached) {
 
-                    // check footer
-                    std::smatch base_match;
-                    std::string sFooter = footer.str();
-                    if (!std::regex_match(sFooter, base_match, FOOTER_REGEXP))
-                        throw SaltpackException();
-                    else if (base_match[2] != mode)
-                        throw SaltpackException();
-                    else if (app != "" && base_match[1] != app)
-                        throw SaltpackException();
+                    if (c[0] == '.')
+                        break;
+                    else
+                        footer << c[0];
 
-                    footerVerified = true;
-                }
+                } else if (c[0] == '.') {
 
-                if (buffer.tellp() > ZERO) {
+                    footerReached = true;
 
-                    // decode BaseX data
-                    dataBuffer = Utils::baseXdecode(buffer.str(), BASE62);
-
-                    // reset buffer
-                    buffer.str(std::string());
-                    buffer.clear();
-
-                    index = 0;
-                    dataReady = true;
-                }
+                } else if (c[0] != ' ' && c[0] != '>' && c[0] != '\n' && c[0] != '\r' && c[0] != '\t')
+                    buffer << c[0];
             }
 
-            // output current char
-            if (dataReady) {
+            if (buffer.tellp() == ZERO && footerVerified)
+                break;
 
-                ch = dataBuffer[index];
-                setg(&ch, &ch, &ch + 1);
+            if (footerReached) {
 
-            } else if (footerReached)
-                return std::istream::traits_type::eof();
+                // check footer
+                std::smatch base_match;
+                std::string sFooter = footer.str();
+                if (!std::regex_match(sFooter, base_match, FOOTER_REGEXP) || base_match[2] != mode ||
+                    (app != "" && base_match[1] != app)) {
 
-            // check for end of internal buffer
-            if (++index == dataBuffer.size()) {
+                    dataReady = false;
+                    footerReached = true;
+                    return std::istream::traits_type::eof();
+                }
 
-                dataReady = false;
+                footerVerified = true;
+            }
+
+            if (buffer.tellp() > ZERO) {
+
+                // decode BaseX data
+                dataBuffer = Utils::baseXdecode(buffer.str(), BASE62);
+
+                // reset buffer
+                buffer.str(std::string());
+                buffer.clear();
+
                 index = 0;
+                dataReady = true;
             }
+        }
 
-            return std::istream::traits_type::to_int_type(*gptr());
+        // output current char
+        if (dataReady) {
 
-        } catch (const SaltpackException &ex) {
+            ch = dataBuffer[index];
+            setg(&ch, &ch, &ch + 1);
+
+        } else if (footerReached)
+            return std::istream::traits_type::eof();
+
+        // check for end of internal buffer
+        if (++index == dataBuffer.size()) {
 
             dataReady = false;
-            footerReached = true;
-            return std::istream::traits_type::eof();
+            index = 0;
         }
+
+        return std::istream::traits_type::to_int_type(*gptr());
     }
 }
