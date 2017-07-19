@@ -25,6 +25,14 @@ namespace saltpack {
 
     }
 
+    void Base::appendConvertedValue(BYTE_ARRAY &out, unsigned long value) {
+
+        out.push_back((BYTE) ((value >> 24) & 0xFF));
+        out.push_back((BYTE) ((value >> 16) & 0xFF));
+        out.push_back((BYTE) ((value >> 8) & 0XFF));
+        out.push_back((BYTE) ((value & 0XFF)));
+    }
+
     BYTE_ARRAY Base::generateMacKey(BYTE_ARRAY headerHashTrunc, BYTE_ARRAY publickey, BYTE_ARRAY secretkey) {
 
         // generate mac key for recipient
@@ -41,17 +49,15 @@ namespace saltpack {
     }
 
     BYTE_ARRAY Base::generateMacKeyV2(BYTE_ARRAY headerHashTrunc, BYTE_ARRAY senderPublic, BYTE_ARRAY senderSecret,
-                                      BYTE_ARRAY ephemeraPublic, BYTE_ARRAY ephemeralSecret, int recipientIndex) {
+                                      BYTE_ARRAY ephemeraPublic, BYTE_ARRAY ephemeralSecret,
+                                      unsigned long recipientIndex) {
 
         // generate nonce
         BYTE_ARRAY nonce;
         nonce.reserve(headerHashTrunc.size() + 8);
         nonce.insert(nonce.end(), headerHashTrunc.begin(), headerHashTrunc.end());
         nonce.insert(nonce.end(), ZEROES.begin(), ZEROES.end() - 28);
-        nonce.push_back((BYTE) ((recipientIndex >> 24) & 0xFF));
-        nonce.push_back((BYTE) ((recipientIndex >> 16) & 0xFF));
-        nonce.push_back((BYTE) ((recipientIndex >> 8) & 0XFF));
-        nonce.push_back((BYTE) ((recipientIndex & 0XFF)));
+        appendConvertedValue(nonce, recipientIndex);
 
         // generate sender box
         nonce[15] &= (BYTE) 254;
@@ -83,40 +89,32 @@ namespace saltpack {
         return out;
     }
 
-    BYTE_ARRAY Base::generatePayloadSecretboxNonce(int packetIndex) {
+    BYTE_ARRAY Base::generatePayloadSecretboxNonce(unsigned long packetIndex) {
 
         BYTE_ARRAY payloadSecretboxNonce = {'s', 'a', 'l', 't', 'p', 'a', 'c', 'k', '_', 'p', 'l', 'o',
                                             'a', 'd', 's', 'b', '\0', '\0', '\0', '\0'};
-        payloadSecretboxNonce.push_back((BYTE) ((packetIndex >> 24) & 0xFF));
-        payloadSecretboxNonce.push_back((BYTE) ((packetIndex >> 16) & 0xFF));
-        payloadSecretboxNonce.push_back((BYTE) ((packetIndex >> 8) & 0XFF));
-        payloadSecretboxNonce.push_back((BYTE) ((packetIndex & 0XFF)));
+        appendConvertedValue(payloadSecretboxNonce, packetIndex);
 
         return payloadSecretboxNonce;
     }
 
-    BYTE_ARRAY Base::generateRecipientSecretboxNonce(int recipientIndex) {
+    BYTE_ARRAY Base::generateRecipientSecretboxNonce(unsigned long recipientIndex) {
 
         BYTE_ARRAY payloadSecretboxNonce = {'s', 'a', 'l', 't', 'p', 'a', 'c', 'k', '_', 'r', 'e', 'c',
                                             'i', 'p', 's', 'b', '\0', '\0', '\0', '\0'};
-        payloadSecretboxNonce.push_back((BYTE) ((recipientIndex >> 24) & 0xFF));
-        payloadSecretboxNonce.push_back((BYTE) ((recipientIndex >> 16) & 0xFF));
-        payloadSecretboxNonce.push_back((BYTE) ((recipientIndex >> 8) & 0XFF));
-        payloadSecretboxNonce.push_back((BYTE) ((recipientIndex & 0XFF)));
+        appendConvertedValue(payloadSecretboxNonce, recipientIndex);
 
         return payloadSecretboxNonce;
     }
 
     BYTE_ARRAY
-    Base::generateValueForSignature(int packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message, BYTE_ARRAY flag) {
+    Base::generateValueForSignature(unsigned long packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message,
+                                    BYTE_ARRAY flag) {
 
         // packet sequence
         BYTE_ARRAY packetSequence({0, 0, 0, 0});
         packetSequence.reserve(4);
-        packetSequence.push_back((BYTE) ((packetIndex >> 24) & 0xFF));
-        packetSequence.push_back((BYTE) ((packetIndex >> 16) & 0xFF));
-        packetSequence.push_back((BYTE) ((packetIndex >> 8) & 0XFF));
-        packetSequence.push_back((BYTE) ((packetIndex & 0XFF)));
+        appendConvertedValue(packetSequence, packetIndex);
 
         // concatenate header hash, packet sequence, flag and payload chunk
         BYTE_ARRAY concat;
@@ -187,17 +185,14 @@ namespace saltpack {
         return BYTE_ARRAY(&concatHash[0], &concatHash[32]);
     }
 
-    BYTE_ARRAY Base::generateSigncryptionPacketNonce(BYTE_ARRAY headerHash, int packetIndex, bool final) {
+    BYTE_ARRAY Base::generateSigncryptionPacketNonce(BYTE_ARRAY headerHash, unsigned long packetIndex, bool final) {
 
         BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[16]);
         BYTE_ARRAY nonce;
         nonce.reserve(headerHashTrunc.size() + 8);
         nonce.insert(nonce.end(), headerHashTrunc.begin(), headerHashTrunc.end());
         nonce.insert(nonce.end(), ZEROES.begin(), ZEROES.end() - 28);
-        nonce.push_back((BYTE) ((packetIndex >> 24) & 0xFF));
-        nonce.push_back((BYTE) ((packetIndex >> 16) & 0xFF));
-        nonce.push_back((BYTE) ((packetIndex >> 8) & 0XFF));
-        nonce.push_back((BYTE) ((packetIndex & 0XFF)));
+        appendConvertedValue(nonce, packetIndex);
         if (final)
             nonce[15] |= (BYTE) 1;
         else

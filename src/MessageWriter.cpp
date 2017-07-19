@@ -79,7 +79,7 @@ namespace saltpack {
 
         // generate mac keys for recipients
         BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[16]);
-        int recipientIndex = 0;
+        unsigned long recipientIndex = 0;
         for (auto const &publickey : recipients) {
 
             macKeys.push_back(
@@ -230,7 +230,7 @@ namespace saltpack {
         // recipients list
         headerPacket.recipientsList = std::vector<HeaderPacketRecipient>();
         headerPacket.recipientsList.reserve(recipientsPublickeys.size());
-        int recipientIndex = 0;
+        unsigned long recipientIndex = 0;
         for (auto const &publickey : recipientsPublickeys) {
 
             HeaderPacketRecipient recipient;
@@ -305,7 +305,7 @@ namespace saltpack {
         // recipients list
         headerPacket.recipientsList = std::vector<HeaderPacketRecipient>();
         headerPacket.recipientsList.reserve(recipientsPublickeys.size() + symmetricKeys.size());
-        int recipientIndex = 0;
+        unsigned long recipientIndex = 0;
 
         // process Curve25519 recipients
         for (auto const &publickey : recipientsPublickeys) {

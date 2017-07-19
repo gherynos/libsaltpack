@@ -57,17 +57,20 @@ namespace saltpack {
     protected:
         int mode = -1;
 
-        BYTE_ARRAY generatePayloadSecretboxNonce(int packetIndex);
+        void appendConvertedValue(BYTE_ARRAY &out, unsigned long value);
 
-        BYTE_ARRAY generateRecipientSecretboxNonce(int recipientIndex);
+        BYTE_ARRAY generatePayloadSecretboxNonce(unsigned long packetIndex);
+
+        BYTE_ARRAY generateRecipientSecretboxNonce(unsigned long recipientIndex);
 
         BYTE_ARRAY generateMacKey(BYTE_ARRAY headerHashTrunc, BYTE_ARRAY publickey, BYTE_ARRAY secretkey);
 
         BYTE_ARRAY generateMacKeyV2(BYTE_ARRAY headerHashTrunc, BYTE_ARRAY senderPublic, BYTE_ARRAY senderSecret,
-                                    BYTE_ARRAY ephemeraPublic, BYTE_ARRAY ephemeralSecret, int recipientIndex);
+                                    BYTE_ARRAY ephemeraPublic, BYTE_ARRAY ephemeralSecret,
+                                    unsigned long recipientIndex);
 
-        BYTE_ARRAY
-        generateValueForSignature(int packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message, BYTE_ARRAY flag);
+        BYTE_ARRAY generateValueForSignature(unsigned long packetIndex, BYTE_ARRAY headerHash, BYTE_ARRAY message,
+                                             BYTE_ARRAY flag);
 
         BYTE_ARRAY deriveSharedKey(BYTE_ARRAY publickey, BYTE_ARRAY secretkey);
 
@@ -75,10 +78,9 @@ namespace saltpack {
 
         BYTE_ARRAY generateRecipientIdentifier(BYTE_ARRAY sharedSymmetricKey, BYTE_ARRAY payloadSecretboxNonce);
 
-        BYTE_ARRAY generateSigncryptionPacketNonce(BYTE_ARRAY headerHash, int packetIndex, bool final);
+        BYTE_ARRAY generateSigncryptionPacketNonce(BYTE_ARRAY headerHash, unsigned long packetIndex, bool final);
 
-        BYTE_ARRAY
-        generateSignatureInput(BYTE_ARRAY packetNonce, BYTE_ARRAY headerHash, BYTE_ARRAY message, bool final);
+        BYTE_ARRAY generateSignatureInput(BYTE_ARRAY packetNonce, BYTE_ARRAY headerHash, BYTE_ARRAY message, bool final);
     };
 }
 

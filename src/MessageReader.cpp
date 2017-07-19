@@ -247,25 +247,25 @@ namespace saltpack {
             throw SaltpackException("Errors during key pre-calculation.");
 
         // try to open the key boxes
-        recipientIndex = -1;
+        recipientIndex = header.recipientsList.size();
         payloadKey = BYTE_ARRAY(32);
         for (unsigned long i = 0; i < header.recipientsList.size(); i++) {
 
             BYTE_ARRAY nonce = PAYLOAD_KEY_BOX_NONCE;
             if (majorVersion == 2)
-                nonce = generateRecipientSecretboxNonce((int) i);
+                nonce = generateRecipientSecretboxNonce(i);
 
             if (crypto_box_open_easy_afternm(payloadKey.data(), header.recipientsList[i].payloadKeyBox.data(),
                                              header.recipientsList[i].payloadKeyBox.size(),
                                              nonce.data(), k.data()) == 0) {
 
-                recipientIndex = (int) i;
+                recipientIndex = i;
             }
 
             recipients.push_back(header.recipientsList[i].recipientPublicKey);
         }
 
-        if (recipientIndex != -1) {
+        if (recipientIndex != header.recipientsList.size()) {
 
             // open the sender secretbox
             senderPublickey = BYTE_ARRAY(crypto_box_PUBLICKEYBYTES);
@@ -360,7 +360,7 @@ namespace saltpack {
         if (header.mode != mode)
             throw SaltpackException("Wrong mode.");
 
-        recipientIndex = -1;
+        recipientIndex = header.recipientsList.size();
         payloadKey = BYTE_ARRAY(32);
         BYTE_ARRAY sharedSymmetricKey;
         if (recipientSecretkey.size() > 0) {
@@ -372,27 +372,27 @@ namespace saltpack {
             for (unsigned long i = 0; i < header.recipientsList.size(); i++) {
 
                 // generate nonce
-                BYTE_ARRAY payloadSecretboxNonce = generateRecipientSecretboxNonce((int) i);
+                BYTE_ARRAY payloadSecretboxNonce = generateRecipientSecretboxNonce(i);
 
                 // compute and verify identifier
                 BYTE_ARRAY identifier = generateRecipientIdentifier(sharedSymmetricKey, payloadSecretboxNonce);
                 if (identifier == header.recipientsList[i].recipientPublicKey) {
 
-                    recipientIndex = (int) i;
+                    recipientIndex = i;
                 }
 
                 recipients.push_back(header.recipientsList[i].recipientPublicKey);
             }
         }
 
-        if (recipientIndex == -1 && symmetricKey.first.size() > 0) {
+        if (recipientIndex == header.recipientsList.size() && symmetricKey.first.size() > 0) {
 
             // look for symmetric key identifier
             for (unsigned long i = 0; i < header.recipientsList.size(); i++) {
 
                 if (symmetricKey.first == header.recipientsList[i].recipientPublicKey) {
 
-                    recipientIndex = (int) i;
+                    recipientIndex = i;
 
                     // derive shared symmetric key
                     sharedSymmetricKey = deriveSharedKeySymmetric(header.ephemeralPublicKey, symmetricKey.second);
@@ -403,7 +403,7 @@ namespace saltpack {
             }
         }
 
-        if (recipientIndex != -1) {
+        if (recipientIndex != header.recipientsList.size()) {
 
             BYTE_ARRAY payloadSecretboxNonce = generateRecipientSecretboxNonce(recipientIndex);
 

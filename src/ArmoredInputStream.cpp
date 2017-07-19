@@ -51,14 +51,14 @@ namespace saltpack {
         footerVerified = false;
 
         // read header
-        char c[1];
+        char c;
         std::stringstream header;
         while (!input.eof()) {
 
-            input.read(c, 1);
-            if (c[0] == '.')
+            input.get(c);
+            if (c == '.')
                 break;
-            header.write(c, 1);
+            header << c;
         }
 
         // check header
@@ -89,7 +89,7 @@ namespace saltpack {
         std::stringstream footer;
         while (!dataReady && !input.eof()) {
 
-            char c[1];
+            char c;
             while (!input.eof()) {
 
                 // check buffer full
@@ -97,24 +97,24 @@ namespace saltpack {
                     break;
 
                 // read char
-                input.read(c, 1);
+                input.get(c);
                 if (input.gcount() == 0)
                     continue;
 
                 // check char
                 if (footerReached) {
 
-                    if (c[0] == '.')
+                    if (c == '.')
                         break;
                     else
-                        footer << c[0];
+                        footer << c;
 
-                } else if (c[0] == '.') {
+                } else if (c == '.') {
 
                     footerReached = true;
 
-                } else if (c[0] != ' ' && c[0] != '>' && c[0] != '\n' && c[0] != '\r' && c[0] != '\t')
-                    buffer << c[0];
+                } else if (c != ' ' && c != '>' && c != '\n' && c != '\r' && c != '\t')
+                    buffer << c;
             }
 
             if (buffer.tellp() == ZERO && footerVerified)

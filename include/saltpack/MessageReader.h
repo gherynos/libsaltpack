@@ -129,9 +129,9 @@ namespace saltpack {
         BYTE_ARRAY headerHash;
         BYTE_ARRAY payloadKey;
         BYTE_ARRAY macKey;
-        int recipientIndex;
+        unsigned long recipientIndex;
         std::list<BYTE_ARRAY> recipients;
-        unsigned int packetIndex;
+        unsigned long packetIndex;
         std::istream &input;
         msgpack::unpacker unpacker;
         bool lastBlockFound;

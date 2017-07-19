@@ -135,7 +135,7 @@ namespace saltpack {
 
     private:
         std::ostream &output;
-        unsigned int packetIndex;
+        unsigned long packetIndex;
         BYTE_ARRAY payloadKey;
         BYTE_ARRAY headerHash;
         std::list<BYTE_ARRAY> macKeys;
