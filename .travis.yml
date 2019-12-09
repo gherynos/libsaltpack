@@ -25,6 +25,14 @@ matrix:
 before_install:
   - if [ $TRAVIS_OS_NAME = linux ]; then eval "${MATRIX_EVAL}"; fi
 
+addons:
+  homebrew:
+    packages:
+      - libsodium
+      - msgpack
+      - gmp
+      - lcov
+
 install:
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get update && sudo apt-get -y install libgmp-dev lcov; fi
 
@@ -35,12 +43,6 @@ install:
   - if [ $TRAVIS_OS_NAME = linux ]; then wget https://github.com/jedisct1/libsodium/releases/download/1.0.9/libsodium-1.0.9.tar.gz; fi
   - if [ $TRAVIS_OS_NAME = linux ]; then tar -xvzf libsodium-1.0.9.tar.gz; fi
   - if [ $TRAVIS_OS_NAME = linux ]; then pushd libsodium-1.0.9 && ./configure && make && sudo make install && popd; fi
-
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew update; fi
-  - if [ $TRAVIS_OS_NAME = osx ]; then if ! brew ls --version libsodium &>/dev/null; then brew install libsodium; fi; fi
-  - if [ $TRAVIS_OS_NAME = osx ]; then if ! brew ls --version msgpack &>/dev/null; then brew install msgpack; fi; fi
-  - if [ $TRAVIS_OS_NAME = osx ]; then if ! brew ls --version gmp &>/dev/null; then brew install gmp; fi; fi
-  - if [ $TRAVIS_OS_NAME = osx ]; then if ! brew ls --version lcov &>/dev/null; then brew install lcov; fi; fi
 
   - gem install coveralls-lcov
 
