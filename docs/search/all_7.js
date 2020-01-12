@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['libsaltpack',['libsaltpack',['../index.html',1,'']]]
+  ['libsaltpack_21',['libsaltpack',['../index.html',1,'']]]
 ];
