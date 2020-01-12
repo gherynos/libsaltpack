@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,17 +25,20 @@ namespace saltpack {
      *  @brief Saltpack exception.
      */
     class SaltpackException : public std::exception {
+        std::runtime_error m;
 
     public:
-        explicit SaltpackException(const std::string &msg) throw() : msg(msg) {}
+        explicit SaltpackException(const std::string &msg) : m(msg.c_str()) {}
 
-        virtual ~SaltpackException() throw() {}
+        ~SaltpackException() noexcept override = default;
 
-        virtual const char *what() const throw() { return msg.c_str(); }
-
-    private:
-        std::string msg;
+        const char *what() const noexcept override {
+            return m.what();
+        }
     };
+
+    static_assert(std::is_nothrow_copy_constructible<SaltpackException>::value,
+                  "SaltpackException must be nothrow copy constructible");
 }
 
 #endif //SALTPACK_SALTPACKEXCEPTION_H

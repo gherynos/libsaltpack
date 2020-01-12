@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ TEST(utils, base_x) {
         saltpack::Utils::baseXdecode("70000", "0123456789");
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Illegal block.");
     }
@@ -111,7 +111,7 @@ TEST(utils, exceptions) {
         saltpack::Utils::generateKeypair(publickey, secretkey);
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong publickey size.");
     }
@@ -124,7 +124,7 @@ TEST(utils, exceptions) {
         saltpack::Utils::generateKeypair(publickey, secretkey);
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong secretkey size.");
     }
@@ -137,7 +137,7 @@ TEST(utils, exceptions) {
         saltpack::Utils::generateSignKeypair(publickey, secretkey);
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong publickey size.");
     }
@@ -150,7 +150,7 @@ TEST(utils, exceptions) {
         saltpack::Utils::generateSignKeypair(publickey, secretkey);
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong secretkey size.");
     }
@@ -160,7 +160,7 @@ TEST(utils, exceptions) {
         saltpack::Utils::derivePublickey(secretkey);
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong secretkey size.");
     }

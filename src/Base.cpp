@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,14 @@
 
 namespace saltpack {
 
-    Base::~Base() {
-
-    }
+    Base::~Base() = default;
 
     void Base::appendConvertedValue(BYTE_ARRAY &out, unsigned long value) {
 
-        out.push_back((BYTE) ((value >> 24) & 0xFF));
-        out.push_back((BYTE) ((value >> 16) & 0xFF));
-        out.push_back((BYTE) ((value >> 8) & 0XFF));
-        out.push_back((BYTE) ((value & 0XFF)));
+        out.push_back((BYTE) (value >> 24u & 0xFFu));
+        out.push_back((BYTE) (value >> 16u & 0xFFu));
+        out.push_back((BYTE) (value >> 8u & 0XFFu));
+        out.push_back((BYTE) (value & 0XFFu));
     }
 
     BYTE_ARRAY Base::generateMacKey(BYTE_ARRAY headerHashTrunc, BYTE_ARRAY publickey, BYTE_ARRAY secretkey) {

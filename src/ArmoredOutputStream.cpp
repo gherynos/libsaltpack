@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ namespace saltpack {
 
     const std::regex APP_REGEXP("[a-zA-Z0-9]+");
 
-    ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, std::string app, int mode, int lettersInWords,
+    ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, const std::string& app, int mode, int lettersInWords,
                                              int wordsInPhrase) : std::ostream(this), output(out) {
 
-        if (app != "") {
+        if (!app.empty()) {
 
             std::smatch baseMatch;
             if (!std::regex_match(app, baseMatch, APP_REGEXP))
@@ -47,7 +47,7 @@ namespace saltpack {
 
         // write header
         output << "BEGIN ";
-        if (app != "")
+        if (!app.empty())
             output << app << " ";
         output << "SALTPACK ";
         switch (mode) {
@@ -76,7 +76,7 @@ namespace saltpack {
         output << ". ";
     }
 
-    ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, std::string app, int mode) : ArmoredOutputStream(out,
+    ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, const std::string& app, int mode) : ArmoredOutputStream(out,
                                                                                                                  app,
                                                                                                                  mode,
                                                                                                                  15,
@@ -104,7 +104,7 @@ namespace saltpack {
 
         // write footer
         output << ". END ";
-        if (app != "")
+        if (!app.empty())
             output << app << " ";
         output << "SALTPACK ";
         switch (mode) {
@@ -150,9 +150,9 @@ namespace saltpack {
         return c;
     }
 
-    void ArmoredOutputStream::writeToOutput(std::string data) {
+    void ArmoredOutputStream::writeToOutput(const std::string& data) {
 
-        for (size_t i = 0; i < data.size(); i++) {
+        for (char i : data) {
 
             if (lCount == 0) {
 
@@ -166,7 +166,7 @@ namespace saltpack {
                     output << " ";
             }
 
-            output << data[i];
+            output << i;
             lCount--;
         }
     }

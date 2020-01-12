@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@
 namespace saltpack {
 
     const std::regex HEADER_REGEXP(
-            "[>\\n\\r\\t ]*BEGIN[>\\n\\r\\t ]+(?:([a-zA-Z0-9]+)[>\\n\\r\\t ]+)?SALTPACK[>\\n\\r\\t ]+((?:ENCRYPTED|SIGNED)[>\\n\\r\\t ]+MESSAGE|DETACHED[>\\n\\r\\t ]+SIGNATURE)");
+            R"([>\n\r\t ]*BEGIN[>\n\r\t ]+(?:([a-zA-Z0-9]+)[>\n\r\t ]+)?SALTPACK[>\n\r\t ]+((?:ENCRYPTED|SIGNED)[>\n\r\t ]+MESSAGE|DETACHED[>\n\r\t ]+SIGNATURE))");
 
     const std::regex FOOTER_REGEXP(
-            "[>\\n\\r\\t ]*END[>\\n\\r\\t ]+(?:([a-zA-Z0-9]+)[>\\n\\r\\t ]+)?SALTPACK[>\\n\\r\\t ]+((?:ENCRYPTED|SIGNED)[>\\n\\r\\t ]+MESSAGE|DETACHED[>\\n\\r\\t ]+SIGNATURE)");
+            R"([>\n\r\t ]*END[>\n\r\t ]+(?:([a-zA-Z0-9]+)[>\n\r\t ]+)?SALTPACK[>\n\r\t ]+((?:ENCRYPTED|SIGNED)[>\n\r\t ]+MESSAGE|DETACHED[>\n\r\t ]+SIGNATURE))");
 
     const std::regex APP_REGEXP("[a-zA-Z0-9]+");
 
@@ -34,9 +34,9 @@ namespace saltpack {
 
     const std::streampos ZERO = 0;
 
-    ArmoredInputStream::ArmoredInputStream(std::istream &in, std::string app) : std::istream(this), input(in) {
+    ArmoredInputStream::ArmoredInputStream(std::istream &in, const std::string& app) : std::istream(this), input(in) {
 
-        if (app != "") {
+        if (!app.empty()) {
 
             std::smatch baseMatch;
             if (!std::regex_match(app, baseMatch, APP_REGEXP))
@@ -68,7 +68,7 @@ namespace saltpack {
             throw SaltpackException("Wrong header.");
         else
             mode = baseMatch[2];
-        if (app != "" && baseMatch[1] != app)
+        if (!app.empty() && baseMatch[1] != app)
             throw SaltpackException("Wrong application.");
     }
 
@@ -126,7 +126,7 @@ namespace saltpack {
                 std::smatch base_match;
                 std::string sFooter = footer.str();
                 if (!std::regex_match(sFooter, base_match, FOOTER_REGEXP) || base_match[2] != mode ||
-                    (app != "" && base_match[1] != app)) {
+                    (!app.empty() && base_match[1] != app)) {
 
                     dataReady = false;
                     footerReached = true;

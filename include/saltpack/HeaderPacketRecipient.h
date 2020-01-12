@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ namespace msgpack {
                 operator()(msgpack::packer<Stream> &o, saltpack::HeaderPacketRecipient const &v) const {
 
                     o.pack_array(2);
-                    if (v.recipientPublicKey.size() != 0)
+                    if (!v.recipientPublicKey.empty())
                         o.pack(v.recipientPublicKey);
                     else
                         o.pack_nil();

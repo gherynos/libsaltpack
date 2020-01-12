@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@
 TEST(encryption, main) {
 
     saltpack::BYTE_ARRAY recipient_secretkey(crypto_box_SECRETKEYBYTES);
-    for (unsigned long i = 0; i < recipient_secretkey.size(); i++)
-        recipient_secretkey[i] = (char) 0;
+    for (unsigned char & i : recipient_secretkey)
+        i = (char) 0;
     saltpack::BYTE_ARRAY recipient_publickey = saltpack::Utils::derivePublickey(recipient_secretkey);
 
     saltpack::BYTE_ARRAY sender_publickey(crypto_box_PUBLICKEYBYTES);
@@ -38,7 +38,7 @@ TEST(encryption, main) {
     // encrypt message
     std::stringstream out;
 
-    saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
+    auto *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
     enc->addBlock({'A', ' '}, false);
     enc->addBlock({'m', '3', 's', 'S'}, false);
     enc->addBlock({'@', 'g', '{'}, true);
@@ -49,14 +49,14 @@ TEST(encryption, main) {
     // decrypt message
     std::stringstream in(out.str());
     std::stringstream msg;
-    saltpack::MessageReader *dec = new saltpack::MessageReader(in, recipient_secretkey);
+    auto *dec = new saltpack::MessageReader(in, recipient_secretkey);
     while (dec->hasMoreBlocks()) {
 
         saltpack::BYTE_ARRAY message = dec->getBlock();
         msg.write(reinterpret_cast<const char *>(message.data()), message.size());
     }
 
-    for (saltpack::BYTE_ARRAY rec: dec->getRecipients())
+    for (const saltpack::BYTE_ARRAY& rec: dec->getRecipients())
         ASSERT_EQ(rec.size(), (unsigned long) 0);
 
     ASSERT_EQ(sender_publickey, dec->getSender());
@@ -70,8 +70,8 @@ TEST(encryption, main) {
 TEST(encryption, failure_recipient) {
 
     saltpack::BYTE_ARRAY recipient_secretkey(crypto_box_SECRETKEYBYTES);
-    for (unsigned long i = 0; i < recipient_secretkey.size(); i++)
-        recipient_secretkey[i] = (char) 0;
+    for (unsigned char & i : recipient_secretkey)
+        i = (char) 0;
 
     saltpack::BYTE_ARRAY sender_publickey(crypto_box_PUBLICKEYBYTES);
     saltpack::BYTE_ARRAY sender_secretkey(crypto_box_SECRETKEYBYTES);
@@ -84,7 +84,7 @@ TEST(encryption, failure_recipient) {
     // encrypt message
     std::stringstream out;
 
-    saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
+    auto *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
     enc->addBlock({'A', ' '}, false);
     enc->addBlock({'m', '3', 's', 'S'}, false);
     enc->addBlock({'@', 'g', '{'}, true);
@@ -97,7 +97,7 @@ TEST(encryption, failure_recipient) {
         // decrypt message
         std::stringstream in(out.str());
         std::stringstream msg;
-        saltpack::MessageReader *dec = new saltpack::MessageReader(in, recipient_secretkey);
+        auto *dec = new saltpack::MessageReader(in, recipient_secretkey);
         while (dec->hasMoreBlocks()) {
 
             saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -107,7 +107,7 @@ TEST(encryption, failure_recipient) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Failed to find matching recipient.");
     }
@@ -116,8 +116,8 @@ TEST(encryption, failure_recipient) {
 TEST(encryption, failure_message) {
 
     saltpack::BYTE_ARRAY recipient_secretkey(crypto_box_SECRETKEYBYTES);
-    for (unsigned long i = 0; i < recipient_secretkey.size(); i++)
-        recipient_secretkey[i] = (char) 0;
+    for (unsigned char & i : recipient_secretkey)
+        i = (char) 0;
     saltpack::BYTE_ARRAY recipient_publickey = saltpack::Utils::derivePublickey(recipient_secretkey);
 
     saltpack::BYTE_ARRAY sender_publickey(crypto_box_PUBLICKEYBYTES);
@@ -131,7 +131,7 @@ TEST(encryption, failure_message) {
     // encrypt message
     std::stringstream out;
 
-    saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
+    auto *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
     enc->addBlock({'A', ' ', 'm', '3', 's', 'S', '@', 'g', '{'}, false);
     enc->addBlock({}, true);
 
@@ -145,7 +145,7 @@ TEST(encryption, failure_message) {
         mmsg[mmsg.size() - 80] = (char) ((int) mmsg[mmsg.size() - 80] + 1);
         std::stringstream in(mmsg);
         std::stringstream msg;
-        saltpack::MessageReader *dec = new saltpack::MessageReader(in, recipient_secretkey);
+        auto *dec = new saltpack::MessageReader(in, recipient_secretkey);
         while (dec->hasMoreBlocks()) {
 
             saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -155,7 +155,7 @@ TEST(encryption, failure_message) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Invalid authenticator.");
     }
@@ -180,7 +180,7 @@ TEST(encryption, armor) {
     // encrypt message
     std::stringstream out;
     saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_ENCRYPTION);
-    saltpack::MessageWriter *enc = new saltpack::MessageWriter(aOut, sender_secretkey, recipients);
+    auto *enc = new saltpack::MessageWriter(aOut, sender_secretkey, recipients);
     enc->addBlock({'A', 'n', 'o', 't', 'h', 'e', 'r', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, true);
     aOut.finalise();
 
@@ -191,7 +191,7 @@ TEST(encryption, armor) {
     std::stringstream in(out.str());
     saltpack::ArmoredInputStream is(in);
     std::stringstream msg;
-    saltpack::MessageReader *dec = new saltpack::MessageReader(is, recipient_secretkey);
+    auto *dec = new saltpack::MessageReader(is, recipient_secretkey);
     ASSERT_EQ(recipients, dec->getRecipients());
     ASSERT_EQ(sender_publickey, dec->getSender());
     ASSERT_FALSE(dec->isIntentionallyAnonymous());
@@ -208,8 +208,8 @@ TEST(encryption, armor) {
 TEST(encryption, intentionally_anonymous) {
 
     saltpack::BYTE_ARRAY recipient_secretkey(crypto_box_SECRETKEYBYTES);
-    for (unsigned long i = 0; i < recipient_secretkey.size(); i++)
-        recipient_secretkey[i] = (char) 0;
+    for (unsigned char & i : recipient_secretkey)
+        i = (char) 0;
     saltpack::BYTE_ARRAY recipient_publickey = saltpack::Utils::derivePublickey(recipient_secretkey);
 
     // recipients
@@ -219,7 +219,7 @@ TEST(encryption, intentionally_anonymous) {
     // encrypt message
     std::stringstream out;
 
-    saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, recipients, false);
+    auto *enc = new saltpack::MessageWriter(out, recipients, false);
     enc->addBlock({'A', ' '}, false);
     enc->addBlock({'m', '3', 's', 'S'}, false);
     enc->addBlock({'@', 'g', '!'}, true);
@@ -230,14 +230,14 @@ TEST(encryption, intentionally_anonymous) {
     // decrypt message
     std::stringstream in(out.str());
     std::stringstream msg;
-    saltpack::MessageReader *dec = new saltpack::MessageReader(in, recipient_secretkey);
+    auto *dec = new saltpack::MessageReader(in, recipient_secretkey);
     while (dec->hasMoreBlocks()) {
 
         saltpack::BYTE_ARRAY message = dec->getBlock();
         msg.write(reinterpret_cast<const char *>(message.data()), message.size());
     }
 
-    for (saltpack::BYTE_ARRAY rec: dec->getRecipients())
+    for (const saltpack::BYTE_ARRAY& rec: dec->getRecipients())
         ASSERT_EQ(rec.size(), (unsigned long) 0);
 
     ASSERT_TRUE(dec->isIntentionallyAnonymous());
@@ -250,8 +250,8 @@ TEST(encryption, intentionally_anonymous) {
 TEST(encryption, intentionally_anonymous_rec) {
 
     saltpack::BYTE_ARRAY recipient_secretkey(crypto_box_SECRETKEYBYTES);
-    for (unsigned long i = 0; i < recipient_secretkey.size(); i++)
-        recipient_secretkey[i] = (char) 0;
+    for (unsigned char & i : recipient_secretkey)
+        i = (char) 0;
     saltpack::BYTE_ARRAY recipient_publickey = saltpack::Utils::derivePublickey(recipient_secretkey);
 
     // recipients
@@ -261,7 +261,7 @@ TEST(encryption, intentionally_anonymous_rec) {
     // encrypt message
     std::stringstream out;
 
-    saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, recipients);
+    auto *enc = new saltpack::MessageWriter(out, recipients);
     enc->addBlock({'A', ' '}, false);
     enc->addBlock({'m', '3', 's', 'S'}, false);
     enc->addBlock({'@', 'g', '!'}, false);
@@ -273,7 +273,7 @@ TEST(encryption, intentionally_anonymous_rec) {
     // decrypt message
     std::stringstream in(out.str());
     std::stringstream msg;
-    saltpack::MessageReader *dec = new saltpack::MessageReader(in, recipient_secretkey);
+    auto *dec = new saltpack::MessageReader(in, recipient_secretkey);
     while (dec->hasMoreBlocks()) {
 
         saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -290,8 +290,8 @@ TEST(encryption, intentionally_anonymous_rec) {
 TEST(encryption, final_block) {
 
     saltpack::BYTE_ARRAY recipient_secretkey(crypto_box_SECRETKEYBYTES);
-    for (unsigned long i = 0; i < recipient_secretkey.size(); i++)
-        recipient_secretkey[i] = (char) 0;
+    for (unsigned char & i : recipient_secretkey)
+        i = (char) 0;
     saltpack::BYTE_ARRAY recipient_publickey = saltpack::Utils::derivePublickey(recipient_secretkey);
 
     // recipients
@@ -303,7 +303,7 @@ TEST(encryption, final_block) {
 
     try {
 
-        saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, recipients);
+        auto *enc = new saltpack::MessageWriter(out, recipients);
         enc->addBlock({'B', 'l'}, false);
         enc->addBlock({'a', ' ', 'b', 'l'}, true);
         enc->addBlock({'a', '.', '.', '.'}, true);
@@ -313,7 +313,7 @@ TEST(encryption, final_block) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Final block already added.");
     }
@@ -322,8 +322,8 @@ TEST(encryption, final_block) {
 TEST(encryption, message_truncated) {
 
     saltpack::BYTE_ARRAY recipient_secretkey(crypto_box_SECRETKEYBYTES);
-    for (unsigned long i = 0; i < recipient_secretkey.size(); i++)
-        recipient_secretkey[i] = (char) 0;
+    for (unsigned char & i : recipient_secretkey)
+        i = (char) 0;
     saltpack::BYTE_ARRAY recipient_publickey = saltpack::Utils::derivePublickey(recipient_secretkey);
 
     saltpack::BYTE_ARRAY sender_publickey(crypto_box_PUBLICKEYBYTES);
@@ -337,7 +337,7 @@ TEST(encryption, message_truncated) {
     // encrypt message
     std::stringstream out;
 
-    saltpack::MessageWriter *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
+    auto *enc = new saltpack::MessageWriter(out, sender_secretkey, recipients, false);
     enc->addBlock({'A', ' ', 'm', '3', 's', 'S', '@', 'g', '{'}, false);
 
     out.flush();
@@ -348,7 +348,7 @@ TEST(encryption, message_truncated) {
         // decrypt message
         std::stringstream in(out.str());
         std::stringstream msg;
-        saltpack::MessageReader *dec = new saltpack::MessageReader(in, recipient_secretkey);
+        auto *dec = new saltpack::MessageReader(in, recipient_secretkey);
         while (dec->hasMoreBlocks()) {
 
             saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -358,7 +358,7 @@ TEST(encryption, message_truncated) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Not enough data found to decode block (message truncated?).");
     }
@@ -367,8 +367,8 @@ TEST(encryption, message_truncated) {
 TEST(encryption, version_one) {
 
     saltpack::BYTE_ARRAY recipient_secretkey(crypto_box_SECRETKEYBYTES);
-    for (unsigned long i = 0; i < recipient_secretkey.size(); i++)
-        recipient_secretkey[i] = (char) 0;
+    for (unsigned char & i : recipient_secretkey)
+        i = (char) 0;
     saltpack::BYTE_ARRAY recipient_publickey = saltpack::Utils::derivePublickey(recipient_secretkey);
 
     std::string ciphertext = "BEGIN SALTPACK ENCRYPTED MESSAGE. kcJn5brvybfNjz6 D5litY0cgUolWnj 1wQIat4Gid1knpi "
@@ -381,7 +381,7 @@ TEST(encryption, version_one) {
     std::stringstream in(ciphertext);
     saltpack::ArmoredInputStream is(in);
     std::stringstream msg;
-    saltpack::MessageReader *dec = new saltpack::MessageReader(is, recipient_secretkey);
+    auto *dec = new saltpack::MessageReader(is, recipient_secretkey);
     while (dec->hasMoreBlocks()) {
 
         saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -400,7 +400,7 @@ TEST(encryption, wrong_keys) {
         // decrypt message
         std::stringstream in("sample");
         std::stringstream msg;
-        saltpack::MessageReader *dec = new saltpack::MessageReader(in, saltpack::BYTE_ARRAY(2));
+        auto *dec = new saltpack::MessageReader(in, saltpack::BYTE_ARRAY(2));
         while (dec->hasMoreBlocks()) {
 
             saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -410,7 +410,7 @@ TEST(encryption, wrong_keys) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong size for recipientSecretkey.");
     }
@@ -431,7 +431,7 @@ TEST(encryption, wrong_header) {
                                      "WmmqIdlKO7Wy. END SALTPACK ENCRYPTED MESSAGE.");
         saltpack::ArmoredInputStream is(in);
         std::stringstream msg;
-        saltpack::MessageReader *dec = new saltpack::MessageReader(is, saltpack::BYTE_ARRAY(crypto_box_SECRETKEYBYTES));
+        auto *dec = new saltpack::MessageReader(is, saltpack::BYTE_ARRAY(crypto_box_SECRETKEYBYTES));
         while (dec->hasMoreBlocks()) {
 
             saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -441,7 +441,7 @@ TEST(encryption, wrong_header) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Unrecognized format name: saltpack2.");
     }
@@ -459,7 +459,7 @@ TEST(encryption, wrong_header) {
                                      "TQYo5ZrW0Uf. END SALTPACK ENCRYPTED MESSAGE.");
         saltpack::ArmoredInputStream is(in);
         std::stringstream msg;
-        saltpack::MessageReader *dec = new saltpack::MessageReader(is, saltpack::BYTE_ARRAY(crypto_box_SECRETKEYBYTES));
+        auto *dec = new saltpack::MessageReader(is, saltpack::BYTE_ARRAY(crypto_box_SECRETKEYBYTES));
         while (dec->hasMoreBlocks()) {
 
             saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -469,7 +469,7 @@ TEST(encryption, wrong_header) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Incompatible version: 1.1.");
     }

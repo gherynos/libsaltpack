@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        ArmoredInputStream(std::istream &in, std::string app);
+        ArmoredInputStream(std::istream &in, const std::string& app);
 
         /**
          * Creates a new ArmoredInputStream instance.
@@ -49,22 +49,22 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        ArmoredInputStream(std::istream &in);
+        explicit ArmoredInputStream(std::istream &in);
 
         /**
          * Destroyer.
          */
-        virtual ~ArmoredInputStream();
+        ~ArmoredInputStream() override;
 
         /**
          * Method overridden from std::sreambuf (internal use only).
          *
          * @return the next available character.
          */
-        virtual int underflow() override;
+        int underflow() override;
 
     private:
-        char ch;
+        char ch{};
         std::string app;
         std::istream &input;
         std::stringstream buffer;

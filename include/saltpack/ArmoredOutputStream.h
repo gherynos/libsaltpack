@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        ArmoredOutputStream(std::ostream &out, std::string app, int mode, int lettersInWords, int wordsInPhrase);
+        ArmoredOutputStream(std::ostream &out, const std::string& app, int mode, int lettersInWords, int wordsInPhrase);
 
         /**
          * Creates a new ArmoredInputStream instance for a specific application.
@@ -55,7 +55,7 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        ArmoredOutputStream(std::ostream &out, std::string app, int mode);
+        ArmoredOutputStream(std::ostream &out, const std::string& app, int mode);
 
         /**
          * Creates a new ArmoredInputStream instance.
@@ -85,14 +85,14 @@ namespace saltpack {
         /**
          * Destructor.
          */
-        virtual ~ArmoredOutputStream();
+        ~ArmoredOutputStream() override;
 
         /**
          * Method overridden from std::streambuf (internal use only).
          *
          * @param __c the next character to output.
          */
-        virtual int overflow(int __c) override;
+        int overflow(int __c) override;
 
         /**
          * Finalises the stream. This method must be called when after MessageWriter#finalise() in order to
@@ -114,7 +114,7 @@ namespace saltpack {
         size_t lCount;
         size_t wCount;
 
-        void writeToOutput(std::string data);
+        void writeToOutput(const std::string& data);
     };
 }
 

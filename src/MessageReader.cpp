@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 #include <iostream>
 #include <sstream>
 #include <sodium.h>
-#include <fstream>
 #include "saltpack/Utils.h"
 #include "saltpack/SignaturePayloadPacketV2.h"
 #include "saltpack/SigncryptionPayloadPacket.h"
@@ -32,7 +31,7 @@ namespace saltpack {
 
     const int BUFFER_SIZE = 512;
 
-    MessageReader::MessageReader(std::istream &is, BYTE_ARRAY recipientSecretkey) : input(is) {
+    MessageReader::MessageReader(std::istream &is, const BYTE_ARRAY& recipientSecretkey) : input(is) {
 
         if (sodium_init() == -1)
             throw SaltpackException("Unable to initialise libsodium.");
@@ -115,7 +114,7 @@ namespace saltpack {
             msgpack::object_handle oh;
             while (unpacker.next(oh)) {
 
-                if (headerBin.size() == 0)
+                if (headerBin.empty())
                     oh.get().convert(headerBin);
                 else {
 
@@ -124,7 +123,7 @@ namespace saltpack {
                 }
             }
         }
-        if (signature.size() == 0)
+        if (signature.empty())
             throw SaltpackException("Signature not found.");
 
         // process header
@@ -162,16 +161,16 @@ namespace saltpack {
             throw SaltpackException("Signature was forged or corrupt.");
     }
 
-    MessageReader::MessageReader(std::istream &is, BYTE_ARRAY recipientSecretkey,
-                                 std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey) : input(is) {
+    MessageReader::MessageReader(std::istream &is, const BYTE_ARRAY& recipientSecretkey,
+                                 const std::pair<BYTE_ARRAY, BYTE_ARRAY>& symmetricKey) : input(is) {
 
         if (sodium_init() == -1)
             throw SaltpackException("Unable to initialise libsodium.");
 
-        if (recipientSecretkey.size() != 0 && recipientSecretkey.size() != crypto_box_SECRETKEYBYTES)
+        if (!recipientSecretkey.empty() && recipientSecretkey.size() != crypto_box_SECRETKEYBYTES)
             throw saltpack::SaltpackException("Wrong size for recipientSecretkey.");
 
-        if (symmetricKey.first.size() > 0 && symmetricKey.second.size() != crypto_secretbox_KEYBYTES)
+        if (!symmetricKey.first.empty() && symmetricKey.second.size() != crypto_secretbox_KEYBYTES)
             throw saltpack::SaltpackException("Wrong size for symmetricKey.");
 
         std::vector<char> headerBin;
@@ -328,8 +327,8 @@ namespace saltpack {
         senderPublickey = header.senderPublicKey;
     }
 
-    void MessageReader::processSigncryptionHeader(std::vector<char> headerBin, BYTE_ARRAY recipientSecretkey,
-                                                  std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey) {
+    void MessageReader::processSigncryptionHeader(std::vector<char> headerBin, const BYTE_ARRAY& recipientSecretkey,
+                                                  const std::pair<BYTE_ARRAY, BYTE_ARRAY>& symmetricKey) {
 
         // generate header hash
         headerHash = BYTE_ARRAY(crypto_hash_sha512_BYTES);
@@ -363,7 +362,7 @@ namespace saltpack {
         recipientIndex = header.recipientsList.size();
         payloadKey = BYTE_ARRAY(32);
         BYTE_ARRAY sharedSymmetricKey;
-        if (recipientSecretkey.size() > 0) {
+        if (!recipientSecretkey.empty()) {
 
             // derive shared symmetric key
             sharedSymmetricKey = deriveSharedKey(header.ephemeralPublicKey, recipientSecretkey);
@@ -385,7 +384,7 @@ namespace saltpack {
             }
         }
 
-        if (recipientIndex == header.recipientsList.size() && symmetricKey.first.size() > 0) {
+        if (recipientIndex == header.recipientsList.size() && !symmetricKey.first.empty()) {
 
             // look for symmetric key identifier
             for (unsigned long i = 0; i < header.recipientsList.size(); i++) {
@@ -398,7 +397,7 @@ namespace saltpack {
                     sharedSymmetricKey = deriveSharedKeySymmetric(header.ephemeralPublicKey, symmetricKey.second);
                 }
 
-                if (recipientSecretkey.size() <= 0)
+                if (recipientSecretkey.empty())
                     recipients.push_back(header.recipientsList[i].recipientPublicKey);
             }
         }
@@ -557,9 +556,9 @@ namespace saltpack {
                                        payloadSecretboxNonce.data(), payloadKey.data()) != 0)
             throw SaltpackException("Errors while decrypting payload.");
 
-        if (majorVersion == 2 || (majorVersion == 1 && message.size() > 0))
+        if (majorVersion == 2 || (majorVersion == 1 && !message.empty()))
             packetIndex += 1;
-        lastBlockFound = majorVersion == 2 ? final : message.size() <= 0;
+        lastBlockFound = majorVersion == 2 ? final : message.empty();
 
         return message;
     }
@@ -583,9 +582,9 @@ namespace saltpack {
         if (crypto_sign_verify_detached(signature.data(), value.data(), value.size(), senderPublickey.data()) != 0)
             throw SaltpackException("Signature was forged or corrupt.");
 
-        if (majorVersion == 2 || (majorVersion == 1 && payloadChunk.size() > 0))
+        if (majorVersion == 2 || (majorVersion == 1 && !payloadChunk.empty()))
             packetIndex += 1;
-        lastBlockFound = majorVersion == 2 ? final : payloadChunk.size() <= 0;
+        lastBlockFound = majorVersion == 2 ? final : payloadChunk.empty();
 
         return payloadChunk;
     }

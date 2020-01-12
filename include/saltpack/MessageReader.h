@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        MessageReader(std::istream &is, BYTE_ARRAY recipientSecretkey);
+        MessageReader(std::istream &is, const BYTE_ARRAY& recipientSecretkey);
 
         /**
          * Creates a new MessageReader instance to verify a signed message.
@@ -50,7 +50,7 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        MessageReader(std::istream &is);
+        explicit MessageReader(std::istream &is);
 
         /**
          * Creates a new MessageReader instance to verify a signed message.
@@ -74,12 +74,12 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        MessageReader(std::istream &is, BYTE_ARRAY recipientSecretkey, std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey);
+        MessageReader(std::istream &is, const BYTE_ARRAY& recipientSecretkey, const std::pair<BYTE_ARRAY, BYTE_ARRAY>& symmetricKey);
 
         /**
          * Desctructor. Securely deletes the allocated buffers using `sodium_memzero`.
          */
-        virtual ~MessageReader();
+        ~MessageReader() override;
 
         /**
          * Returns the next block of the decrypted/verified message.
@@ -145,8 +145,8 @@ namespace saltpack {
 
         void processSignatureHeader(std::vector<char> headerBin);
 
-        void processSigncryptionHeader(std::vector<char> headerBin, BYTE_ARRAY recipientSecretkey,
-                                       std::pair<BYTE_ARRAY, BYTE_ARRAY> symmetricKey);
+        void processSigncryptionHeader(std::vector<char> headerBin, const BYTE_ARRAY& recipientSecretkey,
+                                       const std::pair<BYTE_ARRAY, BYTE_ARRAY>& symmetricKey);
 
         BYTE_ARRAY decryptPacket(std::vector<BYTE_ARRAY> authenticatorsList, BYTE_ARRAY payloadSecretbox, bool final);
 

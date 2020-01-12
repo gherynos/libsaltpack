@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ TEST(signature, attached) {
 
     // sign message
     std::stringstream out;
-    saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
+    auto *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
     sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, true);
 
     out.flush();
@@ -36,7 +36,7 @@ TEST(signature, attached) {
     // verify message
     std::stringstream in(out.str());
     std::stringstream msg;
-    saltpack::MessageReader *dec = new saltpack::MessageReader(in);
+    auto *dec = new saltpack::MessageReader(in);
     while (dec->hasMoreBlocks()) {
 
         saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -56,7 +56,7 @@ TEST(signature, attached_failure) {
 
     // sign message
     std::stringstream out;
-    saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
+    auto *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
     sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, true);
 
     out.flush();
@@ -78,7 +78,7 @@ TEST(signature, attached_failure) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Signature was forged or corrupt.");
     }
@@ -93,7 +93,7 @@ TEST(signature, attached_armor) {
     // sign message
     std::stringstream out;
     saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_ATTACHED_SIGNATURE);
-    saltpack::MessageWriter *sig = new saltpack::MessageWriter(aOut, signer_secretkey, false);
+    auto *sig = new saltpack::MessageWriter(aOut, signer_secretkey, false);
     sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' '}, false);
     sig->addBlock({'m', 'e', 's', 's', 'a', 'g', 'e'}, true);
     aOut.finalise();
@@ -105,7 +105,7 @@ TEST(signature, attached_armor) {
     std::stringstream in(out.str());
     saltpack::ArmoredInputStream is(in);
     std::stringstream msg;
-    saltpack::MessageReader *dec = new saltpack::MessageReader(is);
+    auto *dec = new saltpack::MessageReader(is);
     while (dec->hasMoreBlocks()) {
 
         saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -125,7 +125,7 @@ TEST(signature, detached) {
 
     // sign message
     std::stringstream out;
-    saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, true);
+    auto *sig = new saltpack::MessageWriter(out, signer_secretkey, true);
     sig->addBlock({'T', 'h', '3', ' ', 'm'}, false);
     sig->addBlock({'E', '$', 's', '4', 'g', '['}, true);
 
@@ -135,7 +135,7 @@ TEST(signature, detached) {
     // verify message
     std::stringstream in(out.str());
     std::stringstream msg("Th3 mE$s4g[");
-    saltpack::MessageReader *dec = new saltpack::MessageReader(in, msg);
+    auto *dec = new saltpack::MessageReader(in, msg);
     ASSERT_EQ(signer_publickey, dec->getSender());
     delete dec;
 
@@ -143,11 +143,11 @@ TEST(signature, detached) {
 
         std::stringstream in2(out.str());
         std::stringstream msg2("Wrong");
-        saltpack::MessageReader(in2, msg2);
+        saltpack::MessageReader sample(in2, msg2);
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Signature was forged or corrupt.");
     }
@@ -162,7 +162,7 @@ TEST(signature, detached_armor) {
     // sign message
     std::stringstream out;
     saltpack::ArmoredOutputStream aOut(out, saltpack::MODE_DETACHED_SIGNATURE);
-    saltpack::MessageWriter *sig = new saltpack::MessageWriter(aOut, signer_secretkey, true);
+    auto sig = new saltpack::MessageWriter(aOut, signer_secretkey, true);
     sig->addBlock({'T', 'h', '3', ' ', 'm', 'E', '$', 's', '4', 'g', '!'}, true);
     aOut.finalise();
 
@@ -173,7 +173,7 @@ TEST(signature, detached_armor) {
     std::stringstream in(out.str());
     std::stringstream msg("Th3 mE$s4g!");
     saltpack::ArmoredInputStream is(in);
-    saltpack::MessageReader *dec = new saltpack::MessageReader(is, msg);
+    auto *dec = new saltpack::MessageReader(is, msg);
     ASSERT_EQ(signer_publickey, dec->getSender());
     delete dec;
 
@@ -182,11 +182,11 @@ TEST(signature, detached_armor) {
         std::stringstream in2(out.str());
         saltpack::ArmoredInputStream is2(in2);
         std::stringstream msg2("Wrong");
-        saltpack::MessageReader(is2, msg2);
+        saltpack::MessageReader sample(is2, msg2);
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Signature was forged or corrupt.");
     }
@@ -200,7 +200,7 @@ TEST(signature, attached_message_truncated) {
 
     // sign message
     std::stringstream out;
-    saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
+    auto *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
     sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, false);
 
     out.flush();
@@ -220,7 +220,7 @@ TEST(signature, attached_message_truncated) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Not enough data found to decode block (message truncated?).");
     }
@@ -234,7 +234,7 @@ TEST(signature, detached_message_truncated) {
 
     // sign message
     std::stringstream out;
-    saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, true);
+    auto *sig = new saltpack::MessageWriter(out, signer_secretkey, true);
     sig->addBlock({'T', 'h', '3', ' ', 'm'}, false);
     sig->addBlock({'E', '$', 's', '4', 'g', '['}, false);
 
@@ -246,13 +246,13 @@ TEST(signature, detached_message_truncated) {
         // verify message
         std::stringstream in(out.str());
         std::stringstream msg("Th3 mE$s4g[");
-        saltpack::MessageReader *dec = new saltpack::MessageReader(in, msg);
+        auto *dec = new saltpack::MessageReader(in, msg);
         ASSERT_EQ(signer_publickey, dec->getSender());
         delete dec;
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Signature not found.");
     }
@@ -268,14 +268,14 @@ TEST(signature, attached_final_block) {
 
         // sign message
         std::stringstream out;
-        saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
+        auto *sig = new saltpack::MessageWriter(out, signer_secretkey, false);
         sig->addBlock({'a', ' ', 's', 'i', 'g', 'n', 'e', 'd', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e'}, true);
         sig->addBlock({' ', 'v', '2'}, true);
 
         out.flush();
         delete sig;
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Final block already added.");
     }
@@ -291,14 +291,14 @@ TEST(signature, detached_final_block) {
 
         // sign message
         std::stringstream out;
-        saltpack::MessageWriter *sig = new saltpack::MessageWriter(out, signer_secretkey, true);
+        auto *sig = new saltpack::MessageWriter(out, signer_secretkey, true);
         sig->addBlock({'T', 'h', '3', ' ', 'm', 'E', '$', 's', '4', 'g', '!'}, true);
         sig->addBlock({'?'}, true);
 
         out.flush();
         delete sig;
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Final block already added.");
     }
@@ -323,7 +323,7 @@ TEST(signature, attached_version_one) {
     std::stringstream in(ciphertext);
     saltpack::ArmoredInputStream is(in);
     std::stringstream msg;
-    saltpack::MessageReader *dec = new saltpack::MessageReader(is);
+    auto *dec = new saltpack::MessageReader(is);
     while (dec->hasMoreBlocks()) {
 
         saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -352,7 +352,7 @@ TEST(signature, detached_version_one) {
     std::stringstream in(ciphertext);
     std::stringstream msg("Signed message 2\n");
     saltpack::ArmoredInputStream is(in);
-    saltpack::MessageReader *dec = new saltpack::MessageReader(is, msg);
+    auto *dec = new saltpack::MessageReader(is, msg);
     ASSERT_EQ(signer_publickey, dec->getSender());
     delete dec;
 }
@@ -370,7 +370,7 @@ TEST(signature, wrong_header) {
                                      "END SALTPACK SIGNED MESSAGE.");
         saltpack::ArmoredInputStream is(in);
         std::stringstream msg;
-        saltpack::MessageReader *dec = new saltpack::MessageReader(is);
+        auto *dec = new saltpack::MessageReader(is);
         while (dec->hasMoreBlocks()) {
 
             saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -380,7 +380,7 @@ TEST(signature, wrong_header) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Unrecognized format name: saltpack2.");
     }
@@ -396,7 +396,7 @@ TEST(signature, wrong_header) {
                                      "END SALTPACK SIGNED MESSAGE.");
         saltpack::ArmoredInputStream is(in);
         std::stringstream msg;
-        saltpack::MessageReader *dec = new saltpack::MessageReader(is);
+        auto *dec = new saltpack::MessageReader(is);
         while (dec->hasMoreBlocks()) {
 
             saltpack::BYTE_ARRAY message = dec->getBlock();
@@ -406,7 +406,7 @@ TEST(signature, wrong_header) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Incompatible version: 1.1.");
     }

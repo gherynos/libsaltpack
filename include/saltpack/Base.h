@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,11 +57,11 @@ namespace saltpack {
     protected:
         int mode = -1;
 
-        void appendConvertedValue(BYTE_ARRAY &out, unsigned long value);
+        static void appendConvertedValue(BYTE_ARRAY &out, unsigned long value);
 
-        BYTE_ARRAY generatePayloadSecretboxNonce(unsigned long packetIndex);
+        static BYTE_ARRAY generatePayloadSecretboxNonce(unsigned long packetIndex);
 
-        BYTE_ARRAY generateRecipientSecretboxNonce(unsigned long recipientIndex);
+        static BYTE_ARRAY generateRecipientSecretboxNonce(unsigned long recipientIndex);
 
         BYTE_ARRAY generateMacKey(BYTE_ARRAY headerHashTrunc, BYTE_ARRAY publickey, BYTE_ARRAY secretkey);
 

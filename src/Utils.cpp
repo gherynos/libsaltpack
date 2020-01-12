@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 #include <cstddef>
 #include <gmpxx.h>
-#include <math.h>
+#include <cmath>
 #include <sodium.h>
 #include "saltpack/Utils.h"
 #include "saltpack/SaltpackException.h"
@@ -70,42 +70,42 @@ namespace saltpack {
         }
     }
 
-    int Utils::baseXblockSize(std::string alphabet, int size) {
+    int Utils::baseXblockSize(const std::string& alphabet, int size) {
 
         return (int) ceil(size * 8 / log2(alphabet.size()));
     }
 
-    std::string Utils::baseXencode(BYTE_ARRAY data, std::string alphabet) {
+    std::string Utils::baseXencode(const BYTE_ARRAY& data, std::string alphabet) {
 
-        return baseXencode(data, data.size(), alphabet);
+        return baseXencode(data, data.size(), std::move(alphabet));
     }
 
     std::string Utils::baseXencode(BYTE_ARRAY data, size_t size, std::string alphabet) {
 
         unsigned long a = alphabet.length();
         int c = baseXblockSize(alphabet, (int) size);
-        std::string out = "";
+        std::string out;
 
         mpz_class num;
         mpz_import(num.get_mpz_t(), size, 1, sizeof(BYTE), 1, 0, data.data());
 
         mpz_class bA(a);
         mpz_class mod;
-        for (double i = 0; i < c; i++) {
+        for (int i = 0; i < c; i++) {
 
             mpz_mod(mod.get_mpz_t(), num.get_mpz_t(), bA.get_mpz_t());
-            out = alphabet.at(mod.get_ui()) + out;
+            out.insert(0, 1, alphabet.at(mod.get_ui()));
             mpz_div(num.get_mpz_t(), num.get_mpz_t(), bA.get_mpz_t());
         }
 
         return out;
     }
 
-    BYTE_ARRAY Utils::baseXdecode(std::string data, std::string alphabet) {
+    BYTE_ARRAY Utils::baseXdecode(std::string data, const std::string& alphabet) {
 
         unsigned long a = alphabet.length();
         unsigned long c = data.length();
-        size_t b = (size_t) floor(c * log2(a) / 8);
+        auto b = (size_t) floor((double) c * log2(a) / 8);
 
         mpz_class num(0);
         mpz_class bA(a);
@@ -127,19 +127,19 @@ namespace saltpack {
         if (count > b)
             throw SaltpackException("Illegal block.");
 
-        mpz_export(out.data() + (b - count), NULL, 1, sizeof(BYTE), 1, 0, num.get_mpz_t());
+        mpz_export(out.data() + (b - count), nullptr, 1, sizeof(BYTE), 1, 0, num.get_mpz_t());
 
         return out;
     }
 
-    BYTE_ARRAY Utils::hexToBin(std::string hex) {
+    BYTE_ARRAY Utils::hexToBin(const std::string& hex) {
 
         if (sodium_init() == -1)
             throw SaltpackException("Unable to initialise libsodium.");
 
         BYTE_ARRAY out(hex.size() / 2);
 
-        if (sodium_hex2bin(out.data(), out.size(), hex.c_str(), hex.size(), NULL, NULL, NULL) != 0)
+        if (sodium_hex2bin(out.data(), out.size(), hex.c_str(), hex.size(), nullptr, nullptr, nullptr) != 0)
             throw SaltpackException("Unable to decode HEX string.");
 
         return out;
@@ -152,7 +152,7 @@ namespace saltpack {
 
         std::vector<char> data(bin.size() * 2 + 1);
 
-        if (sodium_bin2hex(data.data(), data.size(), bin.data(), bin.size()) == NULL)
+        if (sodium_bin2hex(data.data(), data.size(), bin.data(), bin.size()) == nullptr)
             throw SaltpackException("Unable to encode HEX string.");
 
         return std::string(data.data());
@@ -169,7 +169,7 @@ namespace saltpack {
         return salt;
     }
 
-    BYTE_ARRAY Utils::deriveKeyFromPassword(unsigned long long int keySize, std::string password, BYTE_ARRAY salt,
+    BYTE_ARRAY Utils::deriveKeyFromPassword(unsigned long long int keySize, const std::string& password, BYTE_ARRAY salt,
                                             unsigned long long int opsLimit, size_t memLimit) {
 
         if (sodium_init() == -1)

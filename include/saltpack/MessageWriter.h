@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipients,
+        MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, const std::list<BYTE_ARRAY>& recipients,
                       bool visibleRecipients);
 
         /**
@@ -53,7 +53,7 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipients);
+        MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, const std::list<BYTE_ARRAY>& recipients);
 
         /**
          * Creates a new MessageWriter instance to encrypt a message remaining anonymous.
@@ -64,7 +64,7 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipients, bool visibleRecipients);
+        MessageWriter(std::ostream &os, const std::list<BYTE_ARRAY>& recipients, bool visibleRecipients);
 
         /**
          * Creates a new MessageWriter instance to encrypt a message remaining anonymous.
@@ -75,7 +75,7 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipients);
+        MessageWriter(std::ostream &os, const std::list<BYTE_ARRAY>& recipients);
 
         /**
          * Creates a new MessageWriter instance to sign a message.
@@ -86,7 +86,7 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, bool detatchedSignature);
+        MessageWriter(std::ostream &os, const BYTE_ARRAY& senderSecretkey, bool detatchedSignature);
 
         /**
          * Creates a new MessageWriter instance to signcrypt a message.
@@ -100,8 +100,8 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipientsPublickeys,
-                      std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys);
+        MessageWriter(std::ostream &os, const BYTE_ARRAY& senderSecretkey, const std::list<BYTE_ARRAY>& recipientsPublickeys,
+                      const std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>>& symmetricKeys);
 
         /**
          * Creates a new MessageWriter instance to signcrypt a message remaining anonymous.
@@ -115,13 +115,13 @@ namespace saltpack {
          *
          * @throws SaltpackException
          */
-        MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipientsPublickeys,
-                      std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys);
+        MessageWriter(std::ostream &os, const std::list<BYTE_ARRAY>& recipientsPublickeys,
+                      const std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>>& symmetricKeys);
 
         /**
          * Desctructor. Securely deletes the allocated buffers using `sodium_memzero`.
          */
-        virtual ~MessageWriter();
+        ~MessageWriter() override;
 
         /**
          * Adds a block to the current message.
@@ -145,22 +145,22 @@ namespace saltpack {
         BYTE_ARRAY buffer;
 
         std::string generateEncryptionHeader(BYTE_ARRAY ephemeralSecretkey, BYTE_ARRAY ephemeralPublickey,
-                                             BYTE_ARRAY senderPublickey, std::list<BYTE_ARRAY> recipientsPublickeys,
+                                             BYTE_ARRAY senderPublickey, const std::list<BYTE_ARRAY>& recipientsPublickeys,
                                              bool visibleRecipients);
 
-        std::string generateSignatureHeader(BYTE_ARRAY senderPublickey, bool detatchedSignature);
+        static std::string generateSignatureHeader(BYTE_ARRAY senderPublickey, bool detatchedSignature);
 
-        std::string generateSigncryptionHeader(BYTE_ARRAY ephemeralSecretkey, BYTE_ARRAY ephemeralPublickey,
-                                               BYTE_ARRAY senderPublickey, std::list<BYTE_ARRAY> recipientsPublickeys,
-                                               std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys);
+        std::string generateSigncryptionHeader(const BYTE_ARRAY& ephemeralSecretkey, const BYTE_ARRAY& ephemeralPublickey,
+                                               BYTE_ARRAY senderPublickey, const std::list<BYTE_ARRAY>& recipientsPublickeys,
+                                               const std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>>& symmetricKeys);
 
-        std::string encodeHeader(std::string header);
+        static std::string encodeHeader(const std::string& header);
 
-        BYTE_ARRAY generateAuthenticator(BYTE_ARRAY concat, BYTE_ARRAY recipientMacKey);
+        static BYTE_ARRAY generateAuthenticator(BYTE_ARRAY concat, BYTE_ARRAY recipientMacKey);
 
         std::string generatePayloadPacket(BYTE_ARRAY message, bool final);
 
-        std::string generateSignaturePayloadPacket(BYTE_ARRAY message, bool final);
+        std::string generateSignaturePayloadPacket(const BYTE_ARRAY& message, bool final);
 
         std::string generateSigncryptionPayloadPacket(BYTE_ARRAY message, bool final);
     };

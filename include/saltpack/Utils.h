@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ namespace saltpack {
          *
          * @return the number of characters required to encode `size` characters.
          */
-        static int baseXblockSize(std::string alphabet, int size);
+        static int baseXblockSize(const std::string& alphabet, int size);
 
         /**
          * Encodes the data in BaseX using the given `alphabet`.
@@ -76,7 +76,7 @@ namespace saltpack {
          *
          * @return the encoded string.
          */
-        static std::string baseXencode(BYTE_ARRAY data, std::string alphabet);
+        static std::string baseXencode(const BYTE_ARRAY& data, std::string alphabet);
 
         /**
          * Encodes the data in BaseX using the given `alphabet`.
@@ -99,7 +99,7 @@ namespace saltpack {
          *
          * @return the decoded data.
          */
-        static BYTE_ARRAY baseXdecode(std::string data, std::string alphabet);
+        static BYTE_ARRAY baseXdecode(std::string data, const std::string& alphabet);
 
         /**
          * Hexadecial to binary encoding.
@@ -110,7 +110,7 @@ namespace saltpack {
          *
          * @return the binary data.
          */
-        static BYTE_ARRAY hexToBin(std::string hex);
+        static BYTE_ARRAY hexToBin(const std::string& hex);
 
         /**
          * Binary to hexadecimal encoding.
@@ -147,7 +147,7 @@ namespace saltpack {
          *
          * @return the derived key.
          */
-        static BYTE_ARRAY deriveKeyFromPassword(unsigned long long int keySize, std::string password, BYTE_ARRAY salt,
+        static BYTE_ARRAY deriveKeyFromPassword(unsigned long long int keySize, const std::string& password, BYTE_ARRAY salt,
                                                 unsigned long long int opsLimit, size_t memLimit);
     };
 }

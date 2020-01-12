@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,14 @@ TEST(armor, enc) {
     randombytes_buf(data.data(), data.size());
 
     std::stringstream step;
-    saltpack::ArmoredOutputStream *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_ENCRYPTION);
+    auto *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_ENCRYPTION);
     aOut->write((const char *) data.data(), data.size());
     aOut->finalise();
 
     delete aOut;
 
     std::stringstream input(step.str());
-    saltpack::ArmoredInputStream *aIn = new saltpack::ArmoredInputStream(input);
+    auto *aIn = new saltpack::ArmoredInputStream(input);
 
     char buffer[12];
     std::stringstream coll;
@@ -57,14 +57,14 @@ TEST(armor, att) {
     randombytes_buf(data.data(), data.size());
 
     std::stringstream step;
-    saltpack::ArmoredOutputStream *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_ATTACHED_SIGNATURE);
+    auto *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_ATTACHED_SIGNATURE);
     aOut->write((const char *) data.data(), data.size());
     aOut->finalise();
 
     delete aOut;
 
     std::stringstream input(step.str());
-    saltpack::ArmoredInputStream *aIn = new saltpack::ArmoredInputStream(input);
+    auto *aIn = new saltpack::ArmoredInputStream(input);
 
     char buffer[12];
     std::stringstream coll;
@@ -89,14 +89,14 @@ TEST(armor, det) {
     randombytes_buf(data.data(), data.size());
 
     std::stringstream step;
-    saltpack::ArmoredOutputStream *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_DETACHED_SIGNATURE);
+    auto *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_DETACHED_SIGNATURE);
     aOut->write((const char *) data.data(), data.size());
     aOut->finalise();
 
     delete aOut;
 
     std::stringstream input(step.str());
-    saltpack::ArmoredInputStream *aIn = new saltpack::ArmoredInputStream(input);
+    auto *aIn = new saltpack::ArmoredInputStream(input);
 
     char buffer[12];
     std::stringstream coll;
@@ -121,15 +121,15 @@ TEST(armor, enc_rnd) {
     randombytes_buf(data.data(), data.size());
 
     std::stringstream step;
-    saltpack::ArmoredOutputStream *aOut = new saltpack::ArmoredOutputStream(step, "MYAPP", saltpack::MODE_ENCRYPTION,
-                                                                            rand() % 10 + 1, rand() % 100 + 1);
+    auto *aOut = new saltpack::ArmoredOutputStream(step, "MYAPP", saltpack::MODE_ENCRYPTION,
+                                                    rand() % 10 + 1, rand() % 100 + 1);
     aOut->write((const char *) data.data(), data.size());
     aOut->finalise();
 
     delete aOut;
 
     std::stringstream input(step.str());
-    saltpack::ArmoredInputStream *aIn = new saltpack::ArmoredInputStream(input, "MYAPP");
+    auto *aIn = new saltpack::ArmoredInputStream(input, "MYAPP");
 
     char buffer[12];
     std::stringstream coll;
@@ -154,15 +154,15 @@ TEST(armor, att_rnd) {
     randombytes_buf(data.data(), data.size());
 
     std::stringstream step;
-    saltpack::ArmoredOutputStream *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_ATTACHED_SIGNATURE,
-                                                                            rand() % 10 + 1, rand() % 100 + 1);
+    auto *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_ATTACHED_SIGNATURE,
+                                                    rand() % 10 + 1, rand() % 100 + 1);
     aOut->write((const char *) data.data(), data.size());
     aOut->finalise();
 
     delete aOut;
 
     std::stringstream input(step.str());
-    saltpack::ArmoredInputStream *aIn = new saltpack::ArmoredInputStream(input);
+    auto *aIn = new saltpack::ArmoredInputStream(input);
 
     char buffer[12];
     std::stringstream coll;
@@ -187,15 +187,15 @@ TEST(armor, det_rnd) {
     randombytes_buf(data.data(), data.size());
 
     std::stringstream step;
-    saltpack::ArmoredOutputStream *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_DETACHED_SIGNATURE,
-                                                                            rand() % 10 + 1, rand() % 100 + 1);
+    auto *aOut = new saltpack::ArmoredOutputStream(step, saltpack::MODE_DETACHED_SIGNATURE,
+                                                    rand() % 10 + 1, rand() % 100 + 1);
     aOut->write((const char *) data.data(), data.size());
     aOut->finalise();
 
     delete aOut;
 
     std::stringstream input(step.str());
-    saltpack::ArmoredInputStream *aIn = new saltpack::ArmoredInputStream(input);
+    auto *aIn = new saltpack::ArmoredInputStream(input);
 
     char buffer[12];
     std::stringstream coll;
@@ -220,9 +220,9 @@ TEST(armor, wrong_app) {
     randombytes_buf(data.data(), data.size());
 
     std::stringstream step;
-    saltpack::ArmoredOutputStream *aOut = new saltpack::ArmoredOutputStream(step, "App1",
-                                                                            saltpack::MODE_DETACHED_SIGNATURE,
-                                                                            rand() % 10 + 1, rand() % 100 + 1);
+    auto *aOut = new saltpack::ArmoredOutputStream(step, "App1",
+                                                    saltpack::MODE_DETACHED_SIGNATURE,
+                                                    rand() % 10 + 1, rand() % 100 + 1);
     aOut->write((const char *) data.data(), data.size());
     aOut->finalise();
 
@@ -235,7 +235,7 @@ TEST(armor, wrong_app) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong application.");
     }
@@ -248,7 +248,7 @@ TEST(armor, wrong_app_name) {
         std::stringstream step;
         saltpack::ArmoredOutputStream aOut(step, "a name", saltpack::MODE_DETACHED_SIGNATURE);
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong application name.");
     }
@@ -260,7 +260,7 @@ TEST(armor, wrong_app_name) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong application name.");
     }
@@ -277,7 +277,7 @@ TEST(armor, wrong_header_footer) {
 
         throw std::bad_exception();
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong header.");
     }
@@ -305,7 +305,7 @@ TEST(armor, wrong_mode) {
         std::stringstream step;
         saltpack::ArmoredOutputStream aOut(step, saltpack::MODE_SIGNCRYPTION);
 
-    } catch (const saltpack::SaltpackException ex) {
+    } catch (const saltpack::SaltpackException &ex) {
 
         ASSERT_STREQ(ex.what(), "Wrong mode.");
     }

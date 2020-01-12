@@ -12,12 +12,12 @@ Dependencies
 Code repository
 ---------------
 
-[libsaltpack Github repository](https://github.com/Gherynos/libsaltpack)
+[libsaltpack Github repository](https://github.com/gherynos/libsaltpack)
 
 Copyright and license
 ---------------------
 
-    Copyright 2016-2017 Luca Zanconato (<luca.zanconato@nharyes.net>)
+    Copyright 2016-2020 Luca Zanconato (<luca.zanconato@naes.co>)
     
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this work except in compliance with the License.

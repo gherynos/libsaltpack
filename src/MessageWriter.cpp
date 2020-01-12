@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-217 Luca Zanconato
+ * Copyright 2016-2020 Luca Zanconato
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 #include <msgpack.hpp>
 #include <iostream>
-#include <sstream>
 #include <sodium.h>
-#include <fstream>
+#include <utility>
 #include "saltpack/MessageWriter.h"
 #include "saltpack/HeaderPacket.h"
 #include "saltpack/SignatureHeaderPacket.h"
@@ -31,13 +30,13 @@
 
 namespace saltpack {
 
-    MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipients,
+    MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, const std::list<BYTE_ARRAY>& recipients,
                                  bool visibleRecipients) : output(os) {
 
         if (sodium_init() == -1)
             throw SaltpackException("Unable to initialise libsodium.");
 
-        if (senderSecretkey.size() != 0 && senderSecretkey.size() != crypto_box_SECRETKEYBYTES)
+        if (!senderSecretkey.empty() && senderSecretkey.size() != crypto_box_SECRETKEYBYTES)
             throw saltpack::SaltpackException("Wrong size for senderSecretKey.");
 
         mode = MODE_ENCRYPTION;
@@ -56,7 +55,7 @@ namespace saltpack {
 
         // intentionally anonymous message?
         BYTE_ARRAY senderPublickey;
-        if (senderSecretkey.size() == 0) {
+        if (senderSecretkey.empty()) {
 
             senderSecretkey = ephemeralSecretkey;
             senderPublickey = ephemeralPublicKey;
@@ -89,16 +88,16 @@ namespace saltpack {
         }
     }
 
-    MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, std::list<BYTE_ARRAY> recipients)
-            : MessageWriter(os, senderSecretkey, recipients, true) {}
+    MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, const std::list<BYTE_ARRAY>& recipients)
+            : MessageWriter(os, std::move(senderSecretkey), recipients, true) {}
 
-    MessageWriter::MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipients, bool visibleRecipients)
+    MessageWriter::MessageWriter(std::ostream &os, const std::list<BYTE_ARRAY>& recipients, bool visibleRecipients)
             : MessageWriter(os, BYTE_ARRAY(0), recipients, visibleRecipients) {}
 
-    MessageWriter::MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipients) : MessageWriter(os, recipients,
+    MessageWriter::MessageWriter(std::ostream &os, const std::list<BYTE_ARRAY>& recipients) : MessageWriter(os, recipients,
                                                                                                      true) {}
 
-    MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey, bool detatchedSignature) : output(os) {
+    MessageWriter::MessageWriter(std::ostream &os, const BYTE_ARRAY& senderSecretkey, bool detatchedSignature) : output(os) {
 
         if (sodium_init() == -1)
             throw SaltpackException("Unable to initialise libsodium.");
@@ -136,24 +135,24 @@ namespace saltpack {
         output << header_enc;
     }
 
-    MessageWriter::MessageWriter(std::ostream &os, BYTE_ARRAY senderSecretkey,
-                                 std::list<BYTE_ARRAY> recipientsPublickeys,
-                                 std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys) : output(os) {
+    MessageWriter::MessageWriter(std::ostream &os, const BYTE_ARRAY& senderSecretkey,
+                                 const std::list<BYTE_ARRAY>& recipientsPublickeys,
+                                 const std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>>& symmetricKeys) : output(os) {
 
         if (sodium_init() == -1)
             throw SaltpackException("Unable to initialise libsodium.");
 
-        if (senderSecretkey.size() != crypto_sign_SECRETKEYBYTES && senderSecretkey.size() != 0)
+        if (senderSecretkey.size() != crypto_sign_SECRETKEYBYTES && !senderSecretkey.empty())
             throw saltpack::SaltpackException("Wrong size for senderSecretkey.");
 
-        if (recipientsPublickeys.size() == 0 && symmetricKeys.size() == 0)
+        if (recipientsPublickeys.empty() && symmetricKeys.empty())
             throw saltpack::SaltpackException("Please provide at least one key.");
 
-        for (BYTE_ARRAY key: recipientsPublickeys)
+        for (const BYTE_ARRAY& key: recipientsPublickeys)
             if (key.size() != crypto_box_SECRETKEYBYTES)
                 throw saltpack::SaltpackException("Wrong size for recipientPublickey.");
 
-        for (std::pair<BYTE_ARRAY, BYTE_ARRAY> key: symmetricKeys)
+        for (const std::pair<BYTE_ARRAY, BYTE_ARRAY>& key: symmetricKeys)
             if (key.second.size() != crypto_secretbox_KEYBYTES)
                 throw saltpack::SaltpackException("Wrong size for symmetricKey.");
 
@@ -177,7 +176,7 @@ namespace saltpack {
             throw SaltpackException("Errors while generating keypair.");
 
         // anonymous sender?
-        bool anonymousSender = senderSecretkey.size() == 0;
+        bool anonymousSender = senderSecretkey.empty();
 
         // generate header
         BYTE_ARRAY senderPublickey = anonymousSender ? ZEROES : Utils::derivePublickey(senderSecretkey);
@@ -194,8 +193,8 @@ namespace saltpack {
             throw SaltpackException("Errors while calculating hash.");
     }
 
-    MessageWriter::MessageWriter(std::ostream &os, std::list<BYTE_ARRAY> recipientsPublickeys,
-                                 std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys) : MessageWriter(
+    MessageWriter::MessageWriter(std::ostream &os, const std::list<BYTE_ARRAY>& recipientsPublickeys,
+                                 const std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>>& symmetricKeys) : MessageWriter(
             os, BYTE_ARRAY({}), recipientsPublickeys, symmetricKeys) {}
 
     MessageWriter::~MessageWriter() {
@@ -211,7 +210,7 @@ namespace saltpack {
 
     std::string MessageWriter::generateEncryptionHeader(BYTE_ARRAY ephemeralSecretkey, BYTE_ARRAY ephemeralPublickey,
                                                         BYTE_ARRAY senderPublickey,
-                                                        std::list<BYTE_ARRAY> recipientsPublickeys,
+                                                        const std::list<BYTE_ARRAY>& recipientsPublickeys,
                                                         bool visibleRecipients) {
 
         // generate header packet
@@ -219,7 +218,7 @@ namespace saltpack {
         headerPacket.format = "saltpack";
         headerPacket.version = std::vector<int> {2, 0};
         headerPacket.mode = 0;
-        headerPacket.ephemeralPublicKey = ephemeralPublickey;
+        headerPacket.ephemeralPublicKey = std::move(ephemeralPublickey);
 
         // generate sender secretbox
         headerPacket.senderSecretbox = BYTE_ARRAY(crypto_secretbox_MACBYTES + senderPublickey.size());
@@ -258,10 +257,10 @@ namespace saltpack {
         }
 
         // serialise header
-        msgpack::sbuffer buffer;
-        msgpack::pack(buffer, headerPacket);
+        msgpack::sbuffer sbuffer;
+        msgpack::pack(sbuffer, headerPacket);
 
-        return std::string(buffer.data(), buffer.size());
+        return std::string(sbuffer.data(), sbuffer.size());
     }
 
     std::string MessageWriter::generateSignatureHeader(BYTE_ARRAY senderPublickey, bool detatchedSignature) {
@@ -271,23 +270,23 @@ namespace saltpack {
         headerPacket.format = "saltpack";
         headerPacket.version = std::vector<int> {2, 0};
         headerPacket.mode = detatchedSignature ? 2 : 1;
-        headerPacket.senderPublicKey = senderPublickey;
+        headerPacket.senderPublicKey = std::move(senderPublickey);
 
         // generate random nonce
         headerPacket.nonce = BYTE_ARRAY(32);
         randombytes_buf(headerPacket.nonce.data(), headerPacket.nonce.size());
 
         // serialise header
-        msgpack::sbuffer buffer;
-        msgpack::pack(buffer, headerPacket);
+        msgpack::sbuffer sbuffer;
+        msgpack::pack(sbuffer, headerPacket);
 
-        return std::string(buffer.data(), buffer.size());
+        return std::string(sbuffer.data(), sbuffer.size());
     }
 
-    std::string MessageWriter::generateSigncryptionHeader(BYTE_ARRAY ephemeralSecretkey, BYTE_ARRAY ephemeralPublickey,
+    std::string MessageWriter::generateSigncryptionHeader(const BYTE_ARRAY& ephemeralSecretkey, const BYTE_ARRAY& ephemeralPublickey,
                                                           BYTE_ARRAY senderPublickey,
-                                                          std::list<BYTE_ARRAY> recipientsPublickeys,
-                                                          std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>> symmetricKeys) {
+                                                          const std::list<BYTE_ARRAY>& recipientsPublickeys,
+                                                          const std::list<std::pair<BYTE_ARRAY, BYTE_ARRAY>>& symmetricKeys) {
 
         // generate header packet
         HeaderPacket headerPacket;
@@ -356,21 +355,21 @@ namespace saltpack {
         }
 
         // serialise header
-        msgpack::sbuffer buffer;
-        msgpack::pack(buffer, headerPacket);
+        msgpack::sbuffer sbuffer;
+        msgpack::pack(sbuffer, headerPacket);
 
-        return std::string(buffer.data(), buffer.size());
+        return std::string(sbuffer.data(), sbuffer.size());
     }
 
-    std::string MessageWriter::encodeHeader(std::string header) {
+    std::string MessageWriter::encodeHeader(const std::string& header) {
 
         // serialise the header into a MessagePack bin object
-        msgpack::sbuffer buffer;
-        msgpack::packer<msgpack::sbuffer> pk2(&buffer);
+        msgpack::sbuffer sbuffer;
+        msgpack::packer<msgpack::sbuffer> pk2(&sbuffer);
         pk2.pack_bin((uint32_t) header.size());
         pk2.pack_bin_body(header.data(), (uint32_t) header.size());
 
-        return std::string(buffer.data(), buffer.size());
+        return std::string(sbuffer.data(), sbuffer.size());
     }
 
     BYTE_ARRAY MessageWriter::generateAuthenticator(BYTE_ARRAY concat, BYTE_ARRAY recipientMacKey) {
@@ -433,15 +432,15 @@ namespace saltpack {
 
                     // sign
                     BYTE_ARRAY signature(crypto_sign_BYTES);
-                    if (crypto_sign_detached(signature.data(), NULL, concat.data(), concat.size(), secretKey.data()) !=
+                    if (crypto_sign_detached(signature.data(), nullptr, concat.data(), concat.size(), secretKey.data()) !=
                         0)
                         throw SaltpackException("Errors while signing message.");
 
                     // serialise packet
-                    msgpack::sbuffer buffer;
-                    msgpack::pack(buffer, signature);
+                    msgpack::sbuffer sbuffer;
+                    msgpack::pack(sbuffer, signature);
 
-                    output << std::string(buffer.data(), buffer.size());
+                    output << std::string(sbuffer.data(), sbuffer.size());
                 }
             }
                 break;
@@ -490,16 +489,16 @@ namespace saltpack {
         payloadPacket.finalFlag = final;
 
         // serialise packet
-        msgpack::sbuffer buffer;
-        msgpack::pack(buffer, payloadPacket);
+        msgpack::sbuffer sbuffer;
+        msgpack::pack(sbuffer, payloadPacket);
 
         packetIndex += 1;
         lastBlockAdded = final;
 
-        return std::string(buffer.data(), buffer.size());
+        return std::string(sbuffer.data(), sbuffer.size());
     }
 
-    std::string MessageWriter::generateSignaturePayloadPacket(BYTE_ARRAY message, bool final) {
+    std::string MessageWriter::generateSignaturePayloadPacket(const BYTE_ARRAY& message, bool final) {
 
         SignaturePayloadPacketV2 payloadPacket;
 
@@ -513,19 +512,19 @@ namespace saltpack {
 
         // sign
         payloadPacket.signature = BYTE_ARRAY(crypto_sign_BYTES);
-        if (crypto_sign_detached(payloadPacket.signature.data(), NULL, value.data(), value.size(),
+        if (crypto_sign_detached(payloadPacket.signature.data(), nullptr, value.data(), value.size(),
                                  secretKey.data()) != 0)
             throw SaltpackException("Errors while signing message.");
         payloadPacket.finalFlag = final;
 
         // serialise packet
-        msgpack::sbuffer buffer;
-        msgpack::pack(buffer, payloadPacket);
+        msgpack::sbuffer sbuffer;
+        msgpack::pack(sbuffer, payloadPacket);
 
         packetIndex += 1;
         lastBlockAdded = final;
 
-        return std::string(buffer.data(), buffer.size());
+        return std::string(sbuffer.data(), sbuffer.size());
     }
 
     std::string MessageWriter::generateSigncryptionPayloadPacket(BYTE_ARRAY message, bool final) {
@@ -539,13 +538,13 @@ namespace saltpack {
         BYTE_ARRAY signatureInput = generateSignatureInput(nonce, headerHash, message, final);
 
         // anonymous sender?
-        bool anonymousSender = secretKey.size() == 0;
+        bool anonymousSender = secretKey.empty();
 
         // sign signature input
         BYTE_ARRAY signature(crypto_sign_BYTES);
         if (!anonymousSender) {
 
-            if (crypto_sign_detached(signature.data(), NULL, signatureInput.data(), signatureInput.size(),
+            if (crypto_sign_detached(signature.data(), nullptr, signatureInput.data(), signatureInput.size(),
                                      secretKey.data()) != 0)
                 throw SaltpackException("Errors while signing input.");
 
@@ -567,12 +566,12 @@ namespace saltpack {
         payloadPacket.finalFlag = final;
 
         // serialise packet
-        msgpack::sbuffer buffer;
-        msgpack::pack(buffer, payloadPacket);
+        msgpack::sbuffer sbuffer;
+        msgpack::pack(sbuffer, payloadPacket);
 
         packetIndex += 1;
         lastBlockAdded = final;
 
-        return std::string(buffer.data(), buffer.size());
+        return std::string(sbuffer.data(), sbuffer.size());
     }
 }
