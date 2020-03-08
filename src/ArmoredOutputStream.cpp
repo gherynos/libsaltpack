@@ -74,6 +74,7 @@ namespace saltpack {
                 throw SaltpackException("Wrong mode.");
         }
         output << ". ";
+        wCount = wordsInPhrase - (wordsInPhrase * lettersInWords - 36 + app.length()) / lettersInWords;
     }
 
     ArmoredOutputStream::ArmoredOutputStream(std::ostream &out, const std::string& app, int mode) : ArmoredOutputStream(out,
