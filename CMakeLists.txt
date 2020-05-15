@@ -62,14 +62,8 @@ target_link_libraries(saltpack ${LIBSODIUM_LIBRARIES})
 target_link_libraries(saltpack-test ${LIBSODIUM_LIBRARIES})
 
 # MessagePack
-find_package(MsgPack REQUIRED)
+find_package(Msgpack REQUIRED)
 include_directories(${MSGPACK_INCLUDE_DIRS})
-
-# GMP
-find_package(GMP REQUIRED)
-include_directories(${GMP_INCLUDE_DIRS})
-target_link_libraries(saltpack ${GMP_LIBRARIES})
-target_link_libraries(saltpack-test ${GMP_LIBRARIES})
 
 # Threads
 find_package(Threads REQUIRED)

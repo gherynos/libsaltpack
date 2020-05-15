@@ -15,11 +15,11 @@
  */
 
 #include <cstddef>
-#include <gmpxx.h>
 #include <cmath>
 #include <sodium.h>
 #include "saltpack/Utils.h"
 #include "saltpack/SaltpackException.h"
+#include "../ext/Num/num.hpp"
 
 namespace saltpack {
 
@@ -82,20 +82,23 @@ namespace saltpack {
 
     std::string Utils::baseXencode(BYTE_ARRAY data, size_t size, std::string alphabet) {
 
-        unsigned long a = alphabet.length();
         int c = baseXblockSize(alphabet, (int) size);
         std::string out;
 
-        mpz_class num;
-        mpz_import(num.get_mpz_t(), size, 1, sizeof(BYTE), 1, 0, data.data());
+        Num num;
+        for (size_t i = 0; i < size; i++) {
 
-        mpz_class bA(a);
-        mpz_class mod;
+            num.mul_word(256);
+            num.add_word(data.at(i));
+        }
+
+        Num bA((int) alphabet.length());
+        Num mod;
         for (int i = 0; i < c; i++) {
 
-            mpz_mod(mod.get_mpz_t(), num.get_mpz_t(), bA.get_mpz_t());
-            out.insert(0, 1, alphabet.at(mod.get_ui()));
-            mpz_div(num.get_mpz_t(), num.get_mpz_t(), bA.get_mpz_t());
+            mod = num % bA;
+            out.insert(0, 1, alphabet.at(mod.to_double()));
+            num /= bA;
         }
 
         return out;
@@ -107,27 +110,30 @@ namespace saltpack {
         unsigned long c = data.length();
         auto b = (size_t) floor((double) c * log2(a) / 8);
 
-        mpz_class num(0);
-        mpz_class bA(a);
-        mpz_class pow;
+        Num num(0);
+        Num bA((int) a);
+        Num pow;
         for (int i = (int) c - 1; i >= 0; i--) {
 
-            mpz_class digit((unsigned char) alphabet.find(data.at(c - i - 1)));
-
-            mpz_pow_ui(pow.get_mpz_t(), bA.get_mpz_t(), (unsigned long) i);
-            mpz_mul(digit.get_mpz_t(), digit.get_mpz_t(), pow.get_mpz_t());
-
-            mpz_add(num.get_mpz_t(), num.get_mpz_t(), digit.get_mpz_t());
+            Num digit((unsigned char) alphabet.find(data.at(c - i - 1)));
+            pow = bA.pow(i);
+            digit *= pow;
+            num += digit;
         }
 
-        BYTE_ARRAY out((unsigned long) b);
-        int numb = 8 * sizeof(BYTE);
-        size_t count = (mpz_sizeinbase(num.get_mpz_t(), 2) + numb - 1) / numb;
+        BYTE_ARRAY out;
+        while (num.size() > 0) {
 
-        if (count > b)
+            Num::word remainder;
+            Num::div_mod_half_word(num, 256, num, remainder);
+            out.push_back(remainder);
+        }
+
+        if (out.size() > b)
             throw SaltpackException("Illegal block.");
 
-        mpz_export(out.data() + (b - count), nullptr, 1, sizeof(BYTE), 1, 0, num.get_mpz_t());
+        out.resize(out.size() + (b - out.size()));
+        std::reverse(out.begin(), out.end());
 
         return out;
     }
