@@ -2,8 +2,8 @@ libsaltpack
 ===========
 A C++ implementation of [saltpack](https://saltpack.org).
 
-[![Build Status](https://travis-ci.org/Gherynos/libsaltpack.svg?branch=master&bust=1)](https://travis-ci.org/Gherynos/libsaltpack)
-[![Coverage Status](https://coveralls.io/repos/github/Gherynos/libsaltpack/badge.svg?bust=1)](https://coveralls.io/github/Gherynos/libsaltpack)
+[![Build Status](https://travis-ci.org/gherynos/libsaltpack.svg?branch=master)](https://travis-ci.org/gherynos/libsaltpack)
+[![Coverage Status](https://coveralls.io/repos/github/gherynos/libsaltpack/badge.svg?branch=master)](https://coveralls.io/github/gherynos/libsaltpack?branch=master)
 
 Dependencies
 ------------
