@@ -92,13 +92,11 @@ namespace saltpack {
             num.add_word(data.at(i));
         }
 
-        Num bA((int) alphabet.length());
-        Num mod;
         for (int i = 0; i < c; i++) {
 
-            mod = num % bA;
-            out.insert(0, 1, alphabet.at(mod.to_double()));
-            num /= bA;
+            Num::word remainder;
+            Num::div_mod_half_word(num, alphabet.length(), num, remainder);
+            out.insert(0, 1, alphabet.at(remainder));
         }
 
         return out;
@@ -111,14 +109,10 @@ namespace saltpack {
         auto b = (size_t) floor((double) c * log2(a) / 8);
 
         Num num(0);
-        Num bA((int) a);
-        Num pow;
         for (int i = (int) c - 1; i >= 0; i--) {
 
-            Num digit((unsigned char) alphabet.find(data.at(c - i - 1)));
-            pow = bA.pow(i);
-            digit *= pow;
-            num += digit;
+            num.mul_word(alphabet.length());
+            num.add_word(alphabet.find(data.at(c - i - 1)));
         }
 
         BYTE_ARRAY out;
