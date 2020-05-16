@@ -11,12 +11,16 @@ Dependencies
 * [libsodium](https://download.libsodium.org/doc/) >= 1.0.9
 * [msgpack](https://github.com/msgpack/msgpack-c) >= 2.0.0
 
+Big integer logic implemented using [Num](https://github.com/983/Num.git), included as a git submodule.
+
 Building
 --------
 
 Here's how to build the static library on Linux or OSX:
 
 ```bash
+git submodule init
+git submodule update
 cmake .
 make
 make test
