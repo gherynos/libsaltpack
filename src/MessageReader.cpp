@@ -45,7 +45,7 @@ namespace saltpack {
             // read buffer
             unpacker.reserve_buffer(BUFFER_SIZE);
             input.read(unpacker.buffer(), BUFFER_SIZE);
-            long count = input.gcount();
+            std::streamsize count = input.gcount();
             unpacker.buffer_consumed((size_t) count);
 
             // try to extract object
@@ -76,7 +76,7 @@ namespace saltpack {
             // read buffer
             unpacker.reserve_buffer(BUFFER_SIZE);
             input.read(unpacker.buffer(), BUFFER_SIZE);
-            long count = input.gcount();
+            std::streamsize count = input.gcount();
             unpacker.buffer_consumed((size_t) count);
 
             // try to extract object
@@ -107,7 +107,7 @@ namespace saltpack {
             // read buffer
             unpacker.reserve_buffer(BUFFER_SIZE);
             input.read(unpacker.buffer(), BUFFER_SIZE);
-            long count = input.gcount();
+            std::streamsize count = input.gcount();
             unpacker.buffer_consumed((size_t) count);
 
             // try to extract object
@@ -139,7 +139,7 @@ namespace saltpack {
         while (!messageStream.eof()) {
 
             messageStream.read(buf.data(), BUFFER_SIZE);
-            long count = messageStream.gcount();
+            std::streamsize count = messageStream.gcount();
 
             message.write(buf.data(), count);
         }
@@ -179,7 +179,7 @@ namespace saltpack {
             // read buffer
             unpacker.reserve_buffer(BUFFER_SIZE);
             input.read(unpacker.buffer(), BUFFER_SIZE);
-            long count = input.gcount();
+            std::streamsize count = input.gcount();
             unpacker.buffer_consumed((size_t) count);
 
             // try to extract object
@@ -446,7 +446,7 @@ namespace saltpack {
                 // read buffer
                 unpacker.reserve_buffer(BUFFER_SIZE);
                 input.read(unpacker.buffer(), BUFFER_SIZE);
-                long count = input.gcount();
+                std::streamsize count = input.gcount();
                 unpacker.buffer_consumed((size_t) count);
 
                 if (unpacker.next(oh)) {
@@ -601,8 +601,8 @@ namespace saltpack {
             throw SaltpackException("Errors while decrypting payload.");
 
         // extract signature and message from chunk
-        BYTE_ARRAY detachedSignature(&chunk[0], &chunk[64]);
-        BYTE_ARRAY message(&chunk[64], &chunk[chunk.size()]);
+        BYTE_ARRAY detachedSignature(chunk.begin(), chunk.begin() + 64);
+        BYTE_ARRAY message(chunk.begin() + 64, chunk.end());
 
         // compute the signature input
         BYTE_ARRAY signatureInput = generateSignatureInput(nonce, headerHash, message, final);
