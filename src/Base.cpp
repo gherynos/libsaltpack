@@ -82,7 +82,7 @@ namespace saltpack {
         if (crypto_hash_sha512(concatHash.data(), (const unsigned char *) concat.data(), concat.size()) != 0)
             throw SaltpackException("Errors while calculating hash.");
 
-        BYTE_ARRAY out(&concatHash[0], &concatHash[32]);
+        BYTE_ARRAY out(concatHash.begin(), concatHash.begin() + 32);
 
         return out;
     }
@@ -152,7 +152,7 @@ namespace saltpack {
         BYTE_ARRAY concatHash = BYTE_ARRAY(crypto_auth_hmacsha512_BYTES);
         if (crypto_auth_hmacsha512_init(&state, SIGNCRYPTION_BOX_KEY_IDENTIFIER.data(),
                                         SIGNCRYPTION_BOX_KEY_IDENTIFIER.size()) != 0)
-            throw SaltpackException("Errors while initializing HMAC.");
+            throw SaltpackException("Errors while initialising HMAC.");
         if (crypto_auth_hmacsha512_update(&state, sharedSymmetricKey.data(), sharedSymmetricKey.size()) != 0)
             throw SaltpackException("Errors while updating HMAC.");
         if (crypto_auth_hmacsha512_update(&state, payloadSecretboxNonce.data(), payloadSecretboxNonce.size()) !=
@@ -161,7 +161,7 @@ namespace saltpack {
         if (crypto_auth_hmacsha512_final(&state, concatHash.data()) != 0)
             throw SaltpackException("Errors while calculating HMAC.");
 
-        return BYTE_ARRAY(&concatHash[0], &concatHash[32]);
+        return BYTE_ARRAY(concatHash.begin(), concatHash.begin() + 32);
     }
 
     BYTE_ARRAY Base::deriveSharedKeySymmetric(BYTE_ARRAY publickey, BYTE_ARRAY secretkey) {
@@ -170,7 +170,7 @@ namespace saltpack {
         BYTE_ARRAY concatHash = BYTE_ARRAY(crypto_auth_hmacsha512_BYTES);
         if (crypto_auth_hmacsha512_init(&state, SIGNCRYPTION_DERIVED_SYMMETRIC_KEY.data(),
                                         SIGNCRYPTION_DERIVED_SYMMETRIC_KEY.size()) != 0)
-            throw SaltpackException("Errors while initializing HMAC.");
+            throw SaltpackException("Errors while initialising HMAC.");
         if (crypto_auth_hmacsha512_update(&state, publickey.data(), publickey.size()) != 0)
             throw SaltpackException("Errors while updating HMAC.");
         if (crypto_auth_hmacsha512_update(&state, secretkey.data(), secretkey.size()) !=
@@ -179,12 +179,12 @@ namespace saltpack {
         if (crypto_auth_hmacsha512_final(&state, concatHash.data()) != 0)
             throw SaltpackException("Errors while calculating HMAC.");
 
-        return BYTE_ARRAY(&concatHash[0], &concatHash[32]);
+        return BYTE_ARRAY(concatHash.begin(), concatHash.begin() + 32);
     }
 
     BYTE_ARRAY Base::generateSigncryptionPacketNonce(BYTE_ARRAY headerHash, unsigned long packetIndex, bool final) {
 
-        BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[16]);
+        BYTE_ARRAY headerHashTrunc(headerHash.begin(), headerHash.begin() + 16);
         BYTE_ARRAY nonce;
         nonce.reserve(headerHashTrunc.size() + 8);
         nonce.insert(nonce.end(), headerHashTrunc.begin(), headerHashTrunc.end());

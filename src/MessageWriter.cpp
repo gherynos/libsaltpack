@@ -77,7 +77,7 @@ namespace saltpack {
             throw SaltpackException("Errors while calculating hash.");
 
         // generate mac keys for recipients
-        BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[16]);
+        BYTE_ARRAY headerHashTrunc(headerHash.begin(), headerHash.begin() + 16);
         unsigned long recipientIndex = 0;
         for (auto const &publickey : recipients) {
 

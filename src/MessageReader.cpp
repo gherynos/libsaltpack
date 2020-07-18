@@ -279,12 +279,12 @@ namespace saltpack {
             // generate mac key
             if (majorVersion == 1) {
 
-                BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[24]);
+                BYTE_ARRAY headerHashTrunc(headerHash.begin(), headerHash.begin() + 24);
                 macKey = generateMacKey(headerHashTrunc, senderPublickey, recipientSecretkey);
 
             } else if (majorVersion == 2) {
 
-                BYTE_ARRAY headerHashTrunc(&headerHash[0], &headerHash[16]);
+                BYTE_ARRAY headerHashTrunc(headerHash.begin(), headerHash.begin() + 16);
                 macKey = generateMacKeyV2(headerHashTrunc, senderPublickey, recipientSecretkey,
                                           header.ephemeralPublicKey, recipientSecretkey, recipientIndex);
             }
