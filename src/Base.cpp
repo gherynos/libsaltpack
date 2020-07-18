@@ -143,8 +143,7 @@ namespace saltpack {
                             publickey.data(), secretkey.data()) != 0)
             throw SaltpackException("Errors while generating shared symmetric key.");
 
-        return BYTE_ARRAY(&sharedSymmetricKeyL[sharedSymmetricKeyL.size() - 32],
-                          &sharedSymmetricKeyL[sharedSymmetricKeyL.size()]);
+        return BYTE_ARRAY(sharedSymmetricKeyL.end() - 32, sharedSymmetricKeyL.end());
     }
 
     BYTE_ARRAY Base::generateRecipientIdentifier(BYTE_ARRAY sharedSymmetricKey, BYTE_ARRAY payloadSecretboxNonce) {
@@ -153,7 +152,7 @@ namespace saltpack {
         BYTE_ARRAY concatHash = BYTE_ARRAY(crypto_auth_hmacsha512_BYTES);
         if (crypto_auth_hmacsha512_init(&state, SIGNCRYPTION_BOX_KEY_IDENTIFIER.data(),
                                         SIGNCRYPTION_BOX_KEY_IDENTIFIER.size()) != 0)
-            throw SaltpackException("Errors while initialising HMAC.");
+            throw SaltpackException("Errors while initializing HMAC.");
         if (crypto_auth_hmacsha512_update(&state, sharedSymmetricKey.data(), sharedSymmetricKey.size()) != 0)
             throw SaltpackException("Errors while updating HMAC.");
         if (crypto_auth_hmacsha512_update(&state, payloadSecretboxNonce.data(), payloadSecretboxNonce.size()) !=
@@ -171,7 +170,7 @@ namespace saltpack {
         BYTE_ARRAY concatHash = BYTE_ARRAY(crypto_auth_hmacsha512_BYTES);
         if (crypto_auth_hmacsha512_init(&state, SIGNCRYPTION_DERIVED_SYMMETRIC_KEY.data(),
                                         SIGNCRYPTION_DERIVED_SYMMETRIC_KEY.size()) != 0)
-            throw SaltpackException("Errors while initialising HMAC.");
+            throw SaltpackException("Errors while initializing HMAC.");
         if (crypto_auth_hmacsha512_update(&state, publickey.data(), publickey.size()) != 0)
             throw SaltpackException("Errors while updating HMAC.");
         if (crypto_auth_hmacsha512_update(&state, secretkey.data(), secretkey.size()) !=
