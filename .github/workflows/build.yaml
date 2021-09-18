@@ -1,0 +1,71 @@
+---
+name: build
+
+on: [push]
+
+jobs:
+  linux:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Dependencies
+        run: |
+          sudo apt-get install -y build-essential clang-9 lcov wget cmake
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-9 10
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-9 10
+
+      - name: MsgPack
+        run: |
+          wget https://github.com/msgpack/msgpack-c/releases/download/cpp-2.0.0/msgpack-2.0.0.tar.gz
+          tar -xvzf msgpack-2.0.0.tar.gz
+          pushd msgpack-2.0.0
+          cmake .
+          make
+          sudo make install
+          popd
+
+      - name: LibSodium
+        run: |
+          wget https://github.com/jedisct1/libsodium/releases/download/1.0.9/libsodium-1.0.9.tar.gz
+          tar -xvzf libsodium-1.0.9.tar.gz
+          pushd libsodium-1.0.9
+          ./configure
+          make
+          sudo make install
+          popd
+
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          make
+          ./saltpack-test
+
+  macos:
+    runs-on: macos-10.15
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Dependencies
+        run: |
+          brew install libsodium msgpack msgpack-cxx lcov
+          gem install coveralls-lcov
+
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DENABLE_COVERAGE=true -DCMAKE_BUILD_TYPE=Debug
+          make
+          make saltpack-coverage
+
+      - name: Coverage
+        run: coveralls-lcov build/coverage.info.cleaned

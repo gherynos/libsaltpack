@@ -2,8 +2,8 @@ libsaltpack
 ===========
 A C++ implementation of [saltpack](https://saltpack.org).
 
-[![Build Status](https://travis-ci.org/gherynos/libsaltpack.svg?branch=master)](https://travis-ci.org/gherynos/libsaltpack)
-[![Coverage Status](https://coveralls.io/repos/github/gherynos/libsaltpack/badge.svg?branch=master)](https://coveralls.io/github/gherynos/libsaltpack?branch=master)
+[![Build Status](https://github.com/gherynos/libsaltpack/workflows/build/badge.svg)](https://github.com/gherynos/libsaltpack/actions/workflows/build.yaml)
+[![Coverage Status](https://coveralls.io/repos/github/gherynos/libsaltpack/badge.svg?branch=main)](https://coveralls.io/github/gherynos/libsaltpack?branch=main)
 
 Dependencies
 ------------
@@ -330,19 +330,12 @@ int main(void) {
 }
 ```
 
-Copyright and license
----------------------
+Author
+------
 
-Copyright 2016-2020 Luca Zanconato (<luca.zanconato@naes.co>)
+> GitHub [@gherynos](https://github.com/gherynos)
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this work except in compliance with the License.
-You may obtain a copy of the License in the LICENSE file, or at:
+License
+-------
 
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+libsaltpack is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
