@@ -49,9 +49,16 @@ gtest_discover_tests(saltpack-test)
 # Code coverage
 if (ENABLE_COVERAGE)
     include(CodeCoverage)
-    set(COVERAGE_EXCLUDE '*/ext/*')
-    setup_target_for_coverage(saltpack-coverage saltpack-test coverage)
-
+    setup_target_for_coverage_gcovr_html(
+            NAME saltpack-coverage-html
+            EXECUTABLE saltpack-test
+            EXCLUDE "ext/*" "build/_deps/*" "test/*"
+    )
+    setup_target_for_coverage_gcovr_xml(
+            NAME saltpack-coverage-xml
+            EXECUTABLE saltpack-test
+            EXCLUDE "ext/*" "build/_deps/*" "test/*"
+    )
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
 endif()
 
