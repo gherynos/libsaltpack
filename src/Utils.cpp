@@ -155,7 +155,7 @@ namespace saltpack {
         if (sodium_bin2hex(data.data(), data.size(), bin.data(), bin.size()) == nullptr)
             throw SaltpackException("Unable to encode HEX string.");
 
-        return std::string(data.data());
+        return {data.data()};
     }
 
     BYTE_ARRAY Utils::generateRandomBytes(size_t size) {

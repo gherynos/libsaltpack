@@ -132,7 +132,7 @@ namespace saltpack {
 
         // append header to message
         std::stringstream message;
-        message.write(reinterpret_cast<char *>(headerHash.data()), headerHash.size());
+        message.write(reinterpret_cast<char *>(headerHash.data()), (long) headerHash.size());
 
         // load message
         std::vector<char> buf(BUFFER_SIZE);

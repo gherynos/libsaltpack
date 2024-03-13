@@ -153,7 +153,7 @@ namespace saltpack {
         // output current char
         if (dataReady) {
 
-            ch = dataBuffer[index];
+            ch = (char) dataBuffer[index];
             setg(&ch, &ch, &ch + 1);
 
         } else if (footerReached)

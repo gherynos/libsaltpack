@@ -129,15 +129,15 @@ namespace saltpack {
         BYTE_ARRAY headerHash;
         BYTE_ARRAY payloadKey;
         BYTE_ARRAY macKey;
-        unsigned long recipientIndex;
+        unsigned long recipientIndex{};
         std::list<BYTE_ARRAY> recipients;
-        unsigned long packetIndex;
+        unsigned long packetIndex{};
         std::istream &input;
         msgpack::unpacker unpacker;
-        bool lastBlockFound;
-        bool intentionallyAnonymous;
-        int majorVersion;
-        int minorVersion;
+        bool lastBlockFound{};
+        bool intentionallyAnonymous{};
+        int majorVersion{};
+        int minorVersion{};
 
         BYTE_ARRAY senderPublickey;
 

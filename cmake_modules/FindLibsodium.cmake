@@ -24,12 +24,12 @@ else()
             HINTS
             ENV sodiumPath
             ${_SODIUM_INCLUDE_DIRS}
-            /usr/include /usr/local/inculde /opt/local/include /sw/include
+            /usr/include /usr/local/inculde /opt/local/include /sw/include /opt/homebrew/lib/
             )
 
     find_library(SODIUM_LIB
             NAMES sodium libsodium
-            HINTS ${SODIUM_INCLUDE_DIR}/../lib ${SODIUM_INCLUDE_DIR}/lib${_lib_suffix} ${_SODIUM_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib
+            HINTS ${SODIUM_INCLUDE_DIR}/../lib ${SODIUM_INCLUDE_DIR}/lib${_lib_suffix} ${_SODIUM_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib /opt/homebrew/lib
             )
 
     set(LIBSODIUM_INCLUDE_DIRS ${SODIUM_INCLUDE_DIR} CACHE PATH "sodium include dir")

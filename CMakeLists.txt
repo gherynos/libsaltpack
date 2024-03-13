@@ -1,13 +1,25 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 project(saltpack)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC -Wall")
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall")
 if(MSVC)
     #vc 2012 fix for vararg templates
     set(MSVC_COMPILER_DEFS "-D_VARIADIC_MAX=10")
 endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
+
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP true
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
 include_directories("include")
 
@@ -24,28 +36,15 @@ install(FILES include/saltpack.h DESTINATION include)
 install(DIRECTORY include/saltpack DESTINATION include)
 
 # Tests
-add_subdirectory(ext/gtest)
-add_definitions(${MSVC_COMPILER_DEFS})
 enable_testing()
-include_directories(${GTEST_INCLUDE_DIRS})
 add_executable(saltpack-test test/armor.cpp test/encryption.cpp test/signature.cpp test/signcryption.cpp test/utils.cpp test/main.cpp)
-add_dependencies(saltpack-test googletest)
-
-if(NOT WIN32 OR MINGW)
-    target_link_libraries(saltpack-test ${GTEST_LIBS_DIR}/libgtest.a ${GTEST_LIBS_DIR}/libgtest_main.a)
-else()
-    target_link_libraries(saltpack-test
-        debug ${GTEST_LIBS_DIR}/DebugLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest${CMAKE_FIND_LIBRARY_SUFFIXES}
-        optimized ${GTEST_LIBS_DIR}/ReleaseLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest${CMAKE_FIND_LIBRARY_SUFFIXES}
-        )
-    target_link_libraries(saltpack-test
-        debug ${GTEST_LIBS_DIR}/DebugLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest_main${CMAKE_FIND_LIBRARY_SUFFIXES}
-        optimized ${GTEST_LIBS_DIR}/ReleaseLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest_main${CMAKE_FIND_LIBRARY_SUFFIXES}
-        )
-endif()
-
-target_link_libraries(saltpack-test saltpack)
-add_test(saltpack-test saltpack-test)
+target_link_libraries(
+        saltpack-test
+        GTest::gtest_main
+        saltpack
+)
+include(GoogleTest)
+gtest_discover_tests(saltpack-test)
 
 # Code coverage
 if (ENABLE_COVERAGE)
@@ -65,7 +64,3 @@ target_link_libraries(saltpack-test ${LIBSODIUM_LIBRARIES})
 # MessagePack
 find_package(Msgpack REQUIRED)
 include_directories(${MSGPACK_INCLUDE_DIRS})
-
-# Threads
-find_package(Threads REQUIRED)
-target_link_libraries(saltpack-test ${CMAKE_THREAD_LIBS_INIT})

@@ -90,9 +90,9 @@ namespace saltpack {
         /**
          * Method overridden from std::streambuf (internal use only).
          *
-         * @param __c the next character to output.
+         * @param c the next character to output.
          */
-        int overflow(int __c) override;
+        int overflow(int c) override;
 
         /**
          * Finalises the stream. This method must be called when after MessageWriter#finalise() in order to

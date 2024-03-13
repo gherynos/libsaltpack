@@ -260,7 +260,7 @@ namespace saltpack {
         msgpack::sbuffer sbuffer;
         msgpack::pack(sbuffer, headerPacket);
 
-        return std::string(sbuffer.data(), sbuffer.size());
+        return {sbuffer.data(), sbuffer.size()};
     }
 
     std::string MessageWriter::generateSignatureHeader(BYTE_ARRAY senderPublickey, bool detatchedSignature) {
@@ -280,7 +280,7 @@ namespace saltpack {
         msgpack::sbuffer sbuffer;
         msgpack::pack(sbuffer, headerPacket);
 
-        return std::string(sbuffer.data(), sbuffer.size());
+        return {sbuffer.data(), sbuffer.size()};
     }
 
     std::string MessageWriter::generateSigncryptionHeader(const BYTE_ARRAY& ephemeralSecretkey, const BYTE_ARRAY& ephemeralPublickey,
@@ -358,7 +358,7 @@ namespace saltpack {
         msgpack::sbuffer sbuffer;
         msgpack::pack(sbuffer, headerPacket);
 
-        return std::string(sbuffer.data(), sbuffer.size());
+        return {sbuffer.data(), sbuffer.size()};
     }
 
     std::string MessageWriter::encodeHeader(const std::string& header) {
@@ -369,7 +369,7 @@ namespace saltpack {
         pk2.pack_bin((uint32_t) header.size());
         pk2.pack_bin_body(header.data(), (uint32_t) header.size());
 
-        return std::string(sbuffer.data(), sbuffer.size());
+        return {sbuffer.data(), sbuffer.size()};
     }
 
     BYTE_ARRAY MessageWriter::generateAuthenticator(BYTE_ARRAY concat, BYTE_ARRAY recipientMacKey) {
@@ -495,7 +495,7 @@ namespace saltpack {
         packetIndex += 1;
         lastBlockAdded = final;
 
-        return std::string(sbuffer.data(), sbuffer.size());
+        return {sbuffer.data(), sbuffer.size()};
     }
 
     std::string MessageWriter::generateSignaturePayloadPacket(const BYTE_ARRAY& message, bool final) {
@@ -524,7 +524,7 @@ namespace saltpack {
         packetIndex += 1;
         lastBlockAdded = final;
 
-        return std::string(sbuffer.data(), sbuffer.size());
+        return {sbuffer.data(), sbuffer.size()};
     }
 
     std::string MessageWriter::generateSigncryptionPayloadPacket(BYTE_ARRAY message, bool final) {
@@ -572,6 +572,6 @@ namespace saltpack {
         packetIndex += 1;
         lastBlockAdded = final;
 
-        return std::string(sbuffer.data(), sbuffer.size());
+        return {sbuffer.data(), sbuffer.size()};
     }
 }

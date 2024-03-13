@@ -143,7 +143,7 @@ namespace saltpack {
                             publickey.data(), secretkey.data()) != 0)
             throw SaltpackException("Errors while generating shared symmetric key.");
 
-        return BYTE_ARRAY(sharedSymmetricKeyL.end() - 32, sharedSymmetricKeyL.end());
+        return {sharedSymmetricKeyL.end() - 32, sharedSymmetricKeyL.end()};
     }
 
     BYTE_ARRAY Base::generateRecipientIdentifier(BYTE_ARRAY sharedSymmetricKey, BYTE_ARRAY payloadSecretboxNonce) {
@@ -161,7 +161,7 @@ namespace saltpack {
         if (crypto_auth_hmacsha512_final(&state, concatHash.data()) != 0)
             throw SaltpackException("Errors while calculating HMAC.");
 
-        return BYTE_ARRAY(concatHash.begin(), concatHash.begin() + 32);
+        return {concatHash.begin(), concatHash.begin() + 32};
     }
 
     BYTE_ARRAY Base::deriveSharedKeySymmetric(BYTE_ARRAY publickey, BYTE_ARRAY secretkey) {
@@ -179,7 +179,7 @@ namespace saltpack {
         if (crypto_auth_hmacsha512_final(&state, concatHash.data()) != 0)
             throw SaltpackException("Errors while calculating HMAC.");
 
-        return BYTE_ARRAY(concatHash.begin(), concatHash.begin() + 32);
+        return {concatHash.begin(), concatHash.begin() + 32};
     }
 
     BYTE_ARRAY Base::generateSigncryptionPacketNonce(BYTE_ARRAY headerHash, unsigned long packetIndex, bool final) {

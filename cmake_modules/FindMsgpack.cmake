@@ -1,69 +1,60 @@
-# - Try to find msgpack
-# Once done this will define
-#  MSGPACK_FOUND - System has msgpack
-#  MSGPACK_INCLUDE_DIRS - The msgpack include directories
-#  MSGPACK_LIBRARIES - The libraries needed to use msgpack
+# - Find MsgPack includes and library
+#
+# This module defines
+#  MSGPACK_INCLUDE_DIR
+#  MSGPACK_LIBRARIES, the libraries to link against to use MSGPACK.
+#  MSGPACK_LIB_DIR, the location of the libraries
+#  MSGPACK_FOUND, If false, do not try to use MSGPACK
+#
+# Redistribution and use is allowed according to the terms of the BSD license.
+# For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 
-if(NOT MSGPACK_USE_BUNDLED)
-  find_package(PkgConfig)
-  if (PKG_CONFIG_FOUND)
-    pkg_search_module(PC_MSGPACK QUIET
-      msgpackc>=${Msgpack_FIND_VERSION}
-      msgpack>=${Msgpack_FIND_VERSION})
-  endif()
-else()
-  set(PC_MSGPACK_INCLUDEDIR)
-  set(PC_MSGPACK_INCLUDE_DIRS)
-  set(PC_MSGPACK_LIBDIR)
-  set(PC_MSGPACK_LIBRARY_DIRS)
-  set(LIMIT_SEARCH NO_DEFAULT_PATH)
-endif()
+IF (MSGPACK_LIBRARIES AND MSGPACK_INCLUDE_DIR)
+  SET(MSGPACK_FIND_QUIETLY TRUE) # Already in cache, be silent
+ENDIF (MSGPACK_LIBRARIES AND MSGPACK_INCLUDE_DIR)
 
-set(MSGPACK_DEFINITIONS ${PC_MSGPACK_CFLAGS_OTHER})
 
-find_path(MSGPACK_INCLUDE_DIR msgpack/version_master.h
-  HINTS ${PC_MSGPACK_INCLUDEDIR} ${PC_MSGPACK_INCLUDE_DIRS}
-  ${LIMIT_SEARCH})
+FIND_PATH(MSGPACK_INCLUDE_DIR msgpack.hpp
+        /usr/include
+        /usr/include/msgpack
+        /usr/local/include
+        /usr/local/include/msgpack
+)
 
-if(MSGPACK_INCLUDE_DIR)
-  file(READ ${MSGPACK_INCLUDE_DIR}/msgpack/version_master.h msgpack_version_h)
-  string(REGEX REPLACE ".*MSGPACK_VERSION_MAJOR +([0-9]+).*" "\\1" MSGPACK_VERSION_MAJOR "${msgpack_version_h}")
-  string(REGEX REPLACE ".*MSGPACK_VERSION_MINOR +([0-9]+).*" "\\1" MSGPACK_VERSION_MINOR "${msgpack_version_h}")
-  string(REGEX REPLACE ".*MSGPACK_VERSION_REVISION +([0-9]+).*" "\\1" MSGPACK_VERSION_REVISION "${msgpack_version_h}")
-  set(MSGPACK_VERSION_STRING "${MSGPACK_VERSION_MAJOR}.${MSGPACK_VERSION_MINOR}.${MSGPACK_VERSION_REVISION}")
-else()
-  set(MSGPACK_VERSION_STRING)
-endif()
+FIND_LIBRARY(MSGPACK_LIBRARY NAMES msgpack msgpackc PATHS
+        /usr/lib
+        /usr/local/lib
+        /usr/local/lib/msgpack
+)
 
-# If we're asked to use static linkage, add libmsgpack{,c}.a as a preferred library name.
-if(MSGPACK_USE_STATIC)
-  list(APPEND MSGPACK_NAMES
-    "${CMAKE_STATIC_LIBRARY_PREFIX}msgpackc${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    "${CMAKE_STATIC_LIBRARY_PREFIX}msgpack${CMAKE_STATIC_LIBRARY_SUFFIX}")
-endif()
+# Copy the results to the output variables.
+IF (MSGPACK_INCLUDE_DIR AND MSGPACK_LIBRARY)
+  SET(MSGPACK_FOUND 1)
+  SET(MSGPACK_LIBRARIES ${MSGPACK_LIBRARY})
+  SET(MSGPACK_INCLUDE_DIRS ${MSGPACK_INCLUDE_DIR})
 
-if(MSVC)
-  # The import library for the msgpack DLL has a different name
-  list(APPEND MSGPACK_NAMES msgpack_import)
-else()
-  list(APPEND MSGPACK_NAMES msgpackc msgpack)
-endif()
+  MESSAGE(STATUS "Found these msgpack libs: ${MSGPACK_LIBRARIES}")
 
-find_library(MSGPACK_LIBRARY NAMES ${MSGPACK_NAMES}
-  # Check each directory for all names to avoid using headers/libraries from
-  # different places.
-  NAMES_PER_DIR
-  HINTS ${PC_MSGPACK_LIBDIR} ${PC_MSGPACK_LIBRARY_DIRS}
-  ${LIMIT_SEARCH})
+ELSE (MSGPACK_INCLUDE_DIR AND MSGPACK_LIBRARY)
+  SET(MSGPACK_FOUND 0)
+  SET(MSGPACK_LIBRARIES)
+  SET(MSGPACK_INCLUDE_DIRS)
+ENDIF (MSGPACK_INCLUDE_DIR AND MSGPACK_LIBRARY)
 
-mark_as_advanced(MSGPACK_INCLUDE_DIR MSGPACK_LIBRARY)
+# Report the results.
+IF (NOT MSGPACK_FOUND)
+  SET(MSGPACK_DIR_MESSAGE "MsgPack was not found. Make sure MSGPACK_LIBRARY and MSGPACK_INCLUDE_DIR are set.")
+  IF (NOT MSGPACK_FIND_QUIETLY)
+    MESSAGE(STATUS "${MSGPACK_DIR_MESSAGE}")
+  ELSE (NOT MSGPACK_FIND_QUIETLY)
+    IF (MSGPACK_FIND_REQUIRED)
+      MESSAGE(FATAL_ERROR "${MSGPACK_DIR_MESSAGE}")
+    ENDIF (MSGPACK_FIND_REQUIRED)
+  ENDIF (NOT MSGPACK_FIND_QUIETLY)
+ENDIF (NOT MSGPACK_FOUND)
 
-set(MSGPACK_LIBRARIES ${MSGPACK_LIBRARY})
-set(MSGPACK_INCLUDE_DIRS ${MSGPACK_INCLUDE_DIR})
 
-include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set MSGPACK_FOUND to TRUE
-# if all listed variables are TRUE
-find_package_handle_standard_args(Msgpack
-  REQUIRED_VARS MSGPACK_LIBRARY MSGPACK_INCLUDE_DIR
-  VERSION_VAR MSGPACK_VERSION_STRING)
+MARK_AS_ADVANCED(
+        MSGPACK_INCLUDE_DIRS
+        MSGPACK_LIBRARIES
+)
