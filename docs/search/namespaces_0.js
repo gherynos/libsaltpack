@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['saltpack_43',['saltpack',['../namespacesaltpack.html',1,'']]]
+  ['saltpack_0',['saltpack',['../namespacesaltpack.html',1,'']]]
 ];
