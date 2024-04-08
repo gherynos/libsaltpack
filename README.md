@@ -34,7 +34,7 @@ Android Native Development Kit is also supported; see [libsaltpack-jni](https://
 Documentation
 -------------
 
-The classes documentation can be found here: [https://libsaltpack.nharyes.net/annotated.html](https://libsaltpack.nharyes.net/annotated.html).
+The classes documentation can be found here: [https://libsaltpack.gherynos.com/annotated.html](https://libsaltpack.nharyes.net/annotated.html).
 
 Examples
 --------
