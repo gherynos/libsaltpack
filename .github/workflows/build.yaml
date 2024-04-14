@@ -4,11 +4,55 @@ name: build
 on: [push]
 
 jobs:
+  windows:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install dependencies
+        run: |
+          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+          choco install cmake
+          refreshenv
+          Write-Output "$env:PATH" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: boost
+        run: |
+          Invoke-WebRequest https://boostorg.jfrog.io/artifactory/main/release/1.84.0/source/boost_1_84_0.tar.gz -OutFile boost.tar.gz
+          tar -xzf .\boost.tar.gz
+          Rename-Item -path boost_1_84_0 -NewName boost_libs
+
+      - name: MsgPack
+        run: |
+          Invoke-WebRequest https://github.com/msgpack/msgpack-c/releases/download/cpp-6.1.0/msgpack-cxx-6.1.0.tar.gz -OutFile msgpack.tar.gz
+          tar -xzf .\msgpack.tar.gz
+          cd msgpack-cxx-6.1.0
+          cmake -DMSGPACK_CXX14=ON -D Boost_INCLUDE_DIR=..\boost_libs .
+          msbuild ALL_BUILD.vcxproj -t:rebuild -property:Configuration=Release
+
+      - name: LibSodium
+        run: |
+          Invoke-WebRequest https://github.com/jedisct1/libsodium/releases/download/1.0.19-RELEASE/libsodium-1.0.19-msvc.zip -OutFile libsodium.zip
+          Expand-Archive libsodium.zip .
+
+      - name: Build
+        run: |
+          cmake -D Boost_INCLUDE_DIR=.\boost_libs -D MSGPACK_INCLUDE_DIR=.\msgpack-cxx-6.1.0\include -D LIBSODIUM_INCLUDE_DIRS=.\libsodium\include -D LIBSODIUM_LIBRARIES=.\libsodium\x64\Debug\v143\static\libsodium.lib .
+          msbuild saltpack.vcxproj -t:rebuild -property:Configuration=Debug
+          msbuild saltpack-test.vcxproj -t:rebuild -property:Configuration=Debug
+          .\Debug\saltpack-test
+
   linux:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -35,7 +79,7 @@ jobs:
     runs-on: macos-13
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
