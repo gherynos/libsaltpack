@@ -27,8 +27,6 @@ make test
 make install
 ```
 
-The library compiles under Windows (tested using CMake 3.6.2 and Visual Studio Community 2015).
-
 Android Native Development Kit is also supported; see [libsaltpack-jni](https://github.com/Gherynos/libsaltpack-jni).
 
 Documentation
